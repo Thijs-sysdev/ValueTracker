@@ -31,7 +31,7 @@ jobs:
 
       - name: Build Electron installer
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win --publish always
 
       - name: Upload installer artifact (for inspection)
