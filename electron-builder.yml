@@ -1,0 +1,53 @@
+appId: com.parttracker.waardebepaling
+productName: Waardebepaling OEV
+copyright: "Copyright © 2026 Parttracker BV"
+
+# The entry point for Electron
+main: electron/main.js
+
+# Output directory for built installers
+directories:
+  output: dist-electron
+  buildResources: build-resources
+
+# Files to include in the packaged app
+files:
+  - electron/**/*
+  - .next/standalone/**/*
+  - .next/static/**/*
+  - public/**/*
+  - package.json
+
+# Copy static Next.js assets into the standalone folder structure
+extraFiles:
+  - from: .next/static
+    to: .next/standalone/.next/static
+  - from: public
+    to: .next/standalone/public
+
+# Windows NSIS installer
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: public/logo.png
+
+nsis:
+  oneClick: false              # Show installer wizard
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Waardebepaling OEV"
+  installerHeader: build-resources/installer-header.bmp
+  installerSidebar: build-resources/installer-sidebar.bmp
+  deleteAppDataOnUninstall: false   # Keep settings and data on uninstall
+  displayLanguageSelector: false
+  language: 1043                   # Dutch (Netherlands)
+
+# Auto-update: publish to GitHub Releases
+publish:
+  provider: github
+  owner: Thijs-sysdev
+  repo: OEV
+  releaseType: release

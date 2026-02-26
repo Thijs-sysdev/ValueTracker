@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import UpdateBanner from "@/components/UpdateBanner";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "Parttracker Waardebepaling",
@@ -25,6 +26,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <UpdateBanner />
           {/* Modern decorative background gradients */}
           <div className="fixed inset-0 -z-10 h-full w-full bg-slate-50 dark:bg-slate-950">
             <div className="absolute bottom-auto left-auto right-0 top-0 h-[500px] w-[500px] -translate-x-[30%] translate-y-[20%] rounded-full bg-teal-400/20 blur-[120px] dark:bg-teal-900/30"></div>
