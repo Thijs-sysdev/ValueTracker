@@ -3,7 +3,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as xlsx from 'xlsx';
+import { exec } from 'child_process';
 import { getPriceList } from '@/lib/priceList';
+import { getPriceListsDir } from '@/lib/dataPath';
 
 const dbPath = path.join(process.cwd(), 'data', 'price_db.json');
 
@@ -142,6 +144,25 @@ export async function uploadPriceListAction(formData: FormData) {
         if (!file) return { success: false, error: "Geen bestand geüpload" };
 
         const buffer = await file.arrayBuffer();
+
+        // Save the uploaded file to the configured price lists directory
+        const priceListsDir = getPriceListsDir();
+        if (!fs.existsSync(priceListsDir)) {
+            fs.mkdirSync(priceListsDir, { recursive: true });
+        }
+
+        let savedFileName = file.name;
+        // Basic deduplication for filenames
+        let fileIndex = 1;
+        while (fs.existsSync(path.join(priceListsDir, savedFileName))) {
+            const ext = path.extname(file.name);
+            const nameWithoutExt = path.basename(file.name, ext);
+            savedFileName = `${nameWithoutExt}_${fileIndex}${ext}`;
+            fileIndex++;
+        }
+        const savedFilePath = path.join(priceListsDir, savedFileName);
+        fs.writeFileSync(savedFilePath, Buffer.from(buffer));
+
         const workbook = xlsx.read(buffer, { type: 'buffer' });
 
         const detected = detectPriceListColumns(workbook);
@@ -289,7 +310,8 @@ export async function uploadPriceListAction(formData: FormData) {
             for (const y of processedYears) {
                 metaLog.unshift({
                     id: crypto.randomUUID(),
-                    fileName: file.name,
+                    fileName: savedFileName, // Use the actually saved filename
+                    originalFileName: file.name, // Keep track of the original name just in case
                     manufacturer: defaultManufacturer,
                     year: y,
                     itemCount: newItemsCount, // Note: this represents new items across the whole file upload
@@ -429,6 +451,94 @@ export async function checkPriceListAction(formData: FormData): Promise<{
     } catch (error) {
         console.error("checkPriceListAction error", error);
         return { success: false, error: error instanceof Error ? error.message : "Onbekende fout bij controle." };
+    }
+}
+
+export async function openPriceListAction(fileName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        if (!fileName) return { success: false, error: "Geen bestandsnaam opgegeven." };
+
+        const priceListsDir = getPriceListsDir();
+        const filePath = path.join(priceListsDir, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            return { success: false, error: `Bestand niet gevonden in de geconfigureerde map:\n${filePath}` };
+        }
+
+        // Use child_process to open the file with the default OS application
+        return new Promise((resolve) => {
+            let command = '';
+            if (process.platform === 'win32') {
+                command = `start "" "${filePath}"`;
+            } else if (process.platform === 'darwin') {
+                command = `open "${filePath}"`;
+            } else {
+                command = `xdg-open "${filePath}"`;
+            }
+
+            exec(command, (error) => {
+                if (error) {
+                    console.error("Error opening file:", error);
+                    resolve({ success: false, error: `Kon bestand niet openen: ${error.message}` });
+                } else {
+                    resolve({ success: true });
+                }
+            });
+        });
+    } catch (error) {
+        console.error("openPriceListAction error", error);
+        return { success: false, error: error instanceof Error ? error.message : "Onbekende fout bij het openen van het bestand." };
+    }
+}
+
+export async function updateManufacturerAction(metaId: string, newManufacturer: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+        const metaPath = path.join(process.cwd(), 'data', 'price_db_meta.json');
+        if (!fs.existsSync(metaPath)) return { success: false, error: "Metadata bestand niet gevonden." };
+
+        const metaLog: any[] = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+        const metaEntryIndex = metaLog.findIndex(m => m.id === metaId);
+
+        if (metaEntryIndex === -1) return { success: false, error: "Prijslijst niet gevonden in metadata." };
+
+        const oldManufacturer = metaLog[metaEntryIndex].manufacturer;
+        const targetFileName = metaLog[metaEntryIndex].fileName;
+
+        if (oldManufacturer === newManufacturer) {
+            return { success: true, message: "Merk is al gelijk." };
+        }
+
+        // 1. Update metadata log
+        metaLog[metaEntryIndex].manufacturer = newManufacturer;
+        fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
+
+        // 2. Update all corresponding items in price_db.json
+        if (fs.existsSync(dbPath)) {
+            const currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+            let updatedCount = 0;
+
+            // We update items where the manufacturer matches the old one.
+            // Ideally we'd only update items that were actually in the specific file,
+            // but since we only group by manufacturer and year, updating by oldManufacturer is the safest way
+            // to ensure consistency across the board for this specific incorrectly named brand.
+            Object.values(currentDb).forEach((item: any) => {
+                if (item.manufacturer === oldManufacturer) {
+                    item.manufacturer = newManufacturer;
+                    updatedCount++;
+                }
+            });
+
+            if (updatedCount > 0) {
+                fs.writeFileSync(dbPath, JSON.stringify(currentDb, null, 2));
+            }
+            return { success: true, message: `Merk bijgewerkt. ${updatedCount} artikelen in de database zijn ook hernoemd naar '${newManufacturer}'.` };
+        }
+
+        return { success: true, message: "Merk bijgewerkt in metadata." };
+
+    } catch (error) {
+        console.error("updateManufacturerAction error", error);
+        return { success: false, error: error instanceof Error ? error.message : "Onbekende fout bij het bijwerken van het merk." };
     }
 }
 

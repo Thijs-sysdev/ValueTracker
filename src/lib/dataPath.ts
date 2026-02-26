@@ -23,22 +23,18 @@ const SETTINGS_FILE = path.join(
 
 interface AppSettings {
     dataDir?: string;
+    priceListsDir?: string;
 }
-
-let _resolvedDataDir: string | null = null;
 
 /**
  * Returns the absolute path to the data directory.
- * Result is cached after the first call.
+ * Reads configurations fresh to prevent multi-worker desync.
  */
 export function getDataDir(): string {
-    if (_resolvedDataDir) return _resolvedDataDir;
-
     // 1. Environment variable override (used by Electron or CI)
     if (process.env.WAARDEBEPALING_DATA_DIR) {
-        _resolvedDataDir = process.env.WAARDEBEPALING_DATA_DIR;
-        console.log(`[dataPath] Using env override: ${_resolvedDataDir}`);
-        return _resolvedDataDir;
+        console.log(`[dataPath] Using env override: ${process.env.WAARDEBEPALING_DATA_DIR}`);
+        return process.env.WAARDEBEPALING_DATA_DIR;
     }
 
     // 2. Settings file (persisted per-machine configuration)
@@ -47,9 +43,8 @@ export function getDataDir(): string {
             const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
             const settings: AppSettings = JSON.parse(raw);
             if (settings.dataDir && fs.existsSync(settings.dataDir)) {
-                _resolvedDataDir = settings.dataDir;
-                console.log(`[dataPath] Using configured data dir: ${_resolvedDataDir}`);
-                return _resolvedDataDir;
+                console.log(`[dataPath] Using configured data dir: ${settings.dataDir}`);
+                return settings.dataDir;
             }
         }
     } catch (e) {
@@ -57,9 +52,38 @@ export function getDataDir(): string {
     }
 
     // 3. Default fallback: ./data/ next to the running process
-    _resolvedDataDir = path.join(process.cwd(), 'data');
-    console.log(`[dataPath] Using default data dir: ${_resolvedDataDir}`);
-    return _resolvedDataDir;
+    const defaultDataDir = path.join(process.cwd(), 'data');
+    console.log(`[dataPath] Using default data dir: ${defaultDataDir}`);
+    return defaultDataDir;
+}
+
+/**
+ * Returns the absolute path to the price lists directory.
+ * Reads configurations fresh to prevent multi-worker desync.
+ */
+export function getPriceListsDir(): string {
+    // 1. Settings file (persisted per-machine configuration)
+    try {
+        if (fs.existsSync(SETTINGS_FILE)) {
+            const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+            const settings: AppSettings = JSON.parse(raw);
+            if (settings.priceListsDir && fs.existsSync(settings.priceListsDir)) {
+                console.log(`[dataPath] Using configured price lists dir: ${settings.priceListsDir}`);
+                return settings.priceListsDir;
+            }
+        }
+    } catch (e) {
+        console.warn('[dataPath] Could not read settings file for price lists dir, falling back to default.', e);
+    }
+
+    // 2. Default fallback: ./uploaded_pricelists/ inside the main data dir
+    const defaultPriceListsDir = path.join(getDataDir(), 'uploaded_pricelists');
+    console.log(`[dataPath] Using default price lists dir: ${defaultPriceListsDir}`);
+    // Ensure default directory exists
+    if (!fs.existsSync(defaultPriceListsDir)) {
+        fs.mkdirSync(defaultPriceListsDir, { recursive: true });
+    }
+    return defaultPriceListsDir;
 }
 
 /**
@@ -79,12 +103,42 @@ export function saveDataDirSetting(newDataDir: string): void {
     if (!fs.existsSync(settingsDir)) {
         fs.mkdirSync(settingsDir, { recursive: true });
     }
-    const settings: AppSettings = { dataDir: newDataDir };
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
 
-    // Reset cache so next call picks up the new value
-    _resolvedDataDir = null;
+    // Read existing settings to not overwrite priceListsDir
+    let currentSettings: AppSettings = {};
+    if (fs.existsSync(SETTINGS_FILE)) {
+        try {
+            currentSettings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+        } catch { }
+    }
+
+    const newSettings: AppSettings = { ...currentSettings, dataDir: newDataDir };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(newSettings, null, 2), 'utf-8');
+
     console.log(`[dataPath] Saved new data dir setting: ${newDataDir}`);
+}
+
+/**
+ * Saves a new price lists directory path to the settings file.
+ */
+export function savePriceListsDirSetting(newDir: string): void {
+    const settingsDir = path.dirname(SETTINGS_FILE);
+    if (!fs.existsSync(settingsDir)) {
+        fs.mkdirSync(settingsDir, { recursive: true });
+    }
+
+    // Read existing settings to not overwrite dataDir
+    let currentSettings: AppSettings = {};
+    if (fs.existsSync(SETTINGS_FILE)) {
+        try {
+            currentSettings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+        } catch { }
+    }
+
+    const newSettings: AppSettings = { ...currentSettings, priceListsDir: newDir };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(newSettings, null, 2), 'utf-8');
+
+    console.log(`[dataPath] Saved new price lists dir setting: ${newDir}`);
 }
 
 /**
@@ -98,5 +152,5 @@ export function getSettingsFilePath(): string {
  * Resets the resolved cache. Useful after saving a new setting.
  */
 export function resetDataDirCache(): void {
-    _resolvedDataDir = null;
+    // No-op
 }

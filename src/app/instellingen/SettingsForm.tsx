@@ -1,17 +1,20 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { updateDataDir } from './actions';
+import { updateDataDir, updatePriceListsDir } from './actions';
 
 interface Props {
     currentDataDir: string;
+    currentPriceListsDir: string;
     settingsFile: string;
     isDefault: boolean;
 }
 
-export default function SettingsForm({ currentDataDir, settingsFile, isDefault }: Props) {
+export default function SettingsForm({ currentDataDir, currentPriceListsDir, settingsFile, isDefault }: Props) {
     const [inputValue, setInputValue] = useState(currentDataDir);
+    const [priceListsInputValue, setPriceListsInputValue] = useState(currentPriceListsDir);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [priceListsMessage, setPriceListsMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const handleSave = () => {
@@ -21,6 +24,17 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
                 setMessage({ type: 'success', text: '✅ Opgeslagen! De nieuwe map is direct actief.' });
             } else {
                 setMessage({ type: 'error', text: `❌ ${result.error}` });
+            }
+        });
+    };
+
+    const handleSavePriceListsDir = () => {
+        startTransition(async () => {
+            const result = await updatePriceListsDir(priceListsInputValue);
+            if (result.success) {
+                setPriceListsMessage({ type: 'success', text: '✅ Opgeslagen! De nieuwe map is ingesteld.' });
+            } else {
+                setPriceListsMessage({ type: 'error', text: `❌ ${result.error}` });
             }
         });
     };
@@ -59,6 +73,38 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
 
             <hr className="settings-divider" />
 
+            <div className="settings-field">
+                <label htmlFor="priceListsDir">Ingelezen Prijslijsten map pad</label>
+                <div className="settings-input-row">
+                    <input
+                        id="priceListsDir"
+                        type="text"
+                        value={priceListsInputValue}
+                        onChange={(e) => setPriceListsInputValue(e.target.value)}
+                        placeholder="Bijv. C:\Users\...\OneDrive\uploaded pricelists"
+                        className="settings-input"
+                    />
+                    <button
+                        onClick={handleSavePriceListsDir}
+                        disabled={isPending}
+                        className="btn-primary"
+                    >
+                        {isPending ? 'Opslaan...' : 'Opslaan'}
+                    </button>
+                </div>
+                <p className="settings-hint">
+                    Voer het volledige pad in naar de OneDrive map waar prijslijsten bewaard moeten worden.
+                </p>
+            </div>
+
+            {priceListsMessage && (
+                <div className={`settings-message ${priceListsMessage.type}`}>
+                    {priceListsMessage.text}
+                </div>
+            )}
+
+            <hr className="settings-divider" />
+
             <div className="settings-meta">
                 <h3>Huidige configuratie</h3>
                 <table className="settings-table">
@@ -70,6 +116,10 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
                         <tr>
                             <td>Instelling opgeslagen in:</td>
                             <td><code>{settingsFile}</code></td>
+                        </tr>
+                        <tr>
+                            <td>Ingelezen prijslijsten map:</td>
+                            <td><code>{currentPriceListsDir}</code></td>
                         </tr>
                         <tr>
                             <td>Status:</td>

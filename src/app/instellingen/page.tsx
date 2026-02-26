@@ -50,7 +50,7 @@ export default async function InstellingenPage() {
                     </summary>
                     <div className="p-6 pt-0 border-t border-white/5">
                         <div className="mt-6">
-                            <SettingsForm currentDataDir={settings.currentDataDir} settingsFile={settings.settingsFile} isDefault={settings.isDefault} />
+                            <SettingsForm currentDataDir={settings.currentDataDir} currentPriceListsDir={settings.currentPriceListsDir} settingsFile={settings.settingsFile} isDefault={settings.isDefault} />
                         </div>
                     </div>
                 </details>
