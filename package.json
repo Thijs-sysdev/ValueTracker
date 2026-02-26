@@ -2,6 +2,7 @@
   "name": "valuetracker",
   "version": "1.0.0",
   "description": "Parttracker BV — ValueTracker surplus inventory valuation tool",
+  "author": "Parttracker BV",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
