@@ -29,6 +29,12 @@ jobs:
       - name: Build Next.js (standalone)
         run: npm run build
 
+      - name: Copy static assets into standalone folder
+        shell: powershell
+        run: |
+          Copy-Item -Recurse -Force .next\static .next\standalone\.next\static
+          Copy-Item -Recurse -Force public .next\standalone\public
+
       - name: Build Electron installer & publish to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

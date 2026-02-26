@@ -18,12 +18,9 @@ files:
 asarUnpack:
   - .next/standalone/**/*
 
-# Copy static Next.js assets into the standalone folder structure
-extraFiles:
-  - from: .next/static
-    to: .next/standalone/.next/static
-  - from: public
-    to: .next/standalone/public
+# Static assets (.next/static, public) are pre-copied into the standalone
+# folder by the CI workflow before electron-builder runs, so they are
+# packaged via asarUnpack alongside server.js at the correct paths.
 
 # Windows NSIS installer
 win:
