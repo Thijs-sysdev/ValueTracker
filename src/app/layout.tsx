@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import UpdateBanner from "@/components/UpdateBanner";
+import pkg from '../../package.json';
 import "./globals.css";
 export const metadata: Metadata = {
   title: "ValueTracker",
@@ -67,7 +68,7 @@ export default function RootLayout({
                 </a>
                 <ThemeToggle />
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-white/60 dark:bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50 backdrop-blur-md shadow-sm">
-                  v1.0
+                  v{pkg.version}
                 </span>
               </div>
             </div>

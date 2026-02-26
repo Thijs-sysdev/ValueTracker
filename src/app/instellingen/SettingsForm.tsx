@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { updateDataDir, resetDataDir } from './actions';
+import Link from 'next/link';
 
 interface Props {
     currentDataDir: string;
@@ -13,6 +14,7 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
     const [inputValue, setInputValue] = useState(currentDataDir);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [showTip, setShowTip] = useState(false);
 
     const handleSave = () => {
         startTransition(async () => {
@@ -37,6 +39,8 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
 
     return (
         <div className="settings-form">
+            {/* Back button */}
+            <Link href="/" className="back-link">← Terug naar overzicht</Link>
             <div className="settings-field">
                 <label htmlFor="dataDir">Data map pad</label>
                 <div className="settings-input-row">
@@ -104,15 +108,23 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
                 </button>
             )}
 
-            <div className="settings-info-box">
-                <strong>💡 OneDrive instelling (werk-pc)</strong>
-                <p>Stel dit pad in op je werk-pc:</p>
-                <code>C:\Users\ThijsRosmalen\OneDrive - Parttracker BV\Apps\ValueTracker</code>
-                <p style={{ marginTop: '0.5rem' }}>
-                    Zorg dat je collega&apos;s toegang hebben tot dezelfde OneDrive map.
-                    Iedereen die de app opent wijst naar dezelfde bestanden.
-                </p>
-            </div>
+            <button
+                onClick={() => setShowTip(v => !v)}
+                className="settings-tip-toggle"
+            >
+                💡 OneDrive instelling (werk-pc) {showTip ? '▲' : '▼'}
+            </button>
+
+            {showTip && (
+                <div className="settings-info-box">
+                    <p>Stel dit pad in op je werk-pc:</p>
+                    <code>C:\Users\ThijsRosmalen\OneDrive - Parttracker BV\Apps\ValueTracker</code>
+                    <p style={{ marginTop: '0.5rem' }}>
+                        Zorg dat je collega&apos;s toegang hebben tot dezelfde OneDrive map.
+                        Iedereen die de app opent wijst naar dezelfde bestanden.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

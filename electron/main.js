@@ -7,7 +7,7 @@
  * - Handles auto-updates via electron-updater + GitHub Releases
  */
 
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const http = require('http');
@@ -161,6 +161,9 @@ function createWindow() {
     });
 }
 
+// ── Hide native menu bar ─────────────────────────────────────────────────────
+Menu.setApplicationMenu(null);
+
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
     try {
@@ -193,12 +196,15 @@ app.whenReady().then(async () => {
         createWindow();
         setupAutoUpdater();
 
-        // Check for updates 5 seconds after start (giving the UI time to load)
-        setTimeout(() => {
-            autoUpdater.checkForUpdates().catch((err) => {
-                console.warn('[updater] Check failed (offline?):', err.message);
-            });
-        }, 5000);
+        // Check for updates 5 seconds after start — production only
+        // (dev builds have no publisher config and would fail immediately)
+        if (!IS_DEV) {
+            setTimeout(() => {
+                autoUpdater.checkForUpdates().catch((err) => {
+                    console.warn('[updater] Check failed (offline?):', err.message);
+                });
+            }, 5000);
+        }
     } catch (err) {
         console.error('[main] Fatal error:', err);
         app.quit();

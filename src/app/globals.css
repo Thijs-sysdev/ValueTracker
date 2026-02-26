@@ -445,6 +445,63 @@ body {
   word-break: break-all;
 }
 
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--color-brand-500);
+}
+
+.dark .back-link {
+  color: #94a3b8;
+}
+
+.dark .back-link:hover {
+  color: var(--color-brand-500);
+}
+
+.settings-tip-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.settings-tip-toggle:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.dark .settings-tip-toggle {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: #1e293b;
+  color: #94a3b8;
+}
+
+.dark .settings-tip-toggle:hover {
+  background: rgba(30, 41, 59, 0.5);
+  color: #f1f5f9;
+}
+
+
 /* ── Update Banner (Electron only) ──────────────────────── */
 .update-banner {
   position: fixed;
