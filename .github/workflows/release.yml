@@ -2,12 +2,12 @@ name: Build & Release Electron Installer
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:   # Allow manual trigger from GitHub UI
+    tags:
+      - 'v*'              # Triggers on version tags: v1.0.0, v1.1.0, etc.
+  workflow_dispatch:      # Allow manual trigger from GitHub Actions UI
 
 permissions:
-  contents: write      # Required to create GitHub Releases
+  contents: write         # Required to create GitHub Releases
 
 jobs:
   build:
@@ -29,14 +29,14 @@ jobs:
       - name: Build Next.js (standalone)
         run: npm run build
 
-      - name: Build Electron installer
+      - name: Build Electron installer & publish to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win --publish always
 
-      - name: Upload installer artifact (for inspection)
+      - name: Upload installer artifact (backup copy)
         uses: actions/upload-artifact@v4
         with:
-          name: WaardebepalingSetup
+          name: ValueTrackerSetup
           path: dist-electron/*.exe
           retention-days: 30
