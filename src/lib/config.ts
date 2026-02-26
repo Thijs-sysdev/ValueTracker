@@ -1,8 +1,9 @@
 import { ValuationConfig } from './types';
 import fs from 'fs';
 import path from 'path';
+import { getDataFilePath } from './dataPath';
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'data', 'config.json');
+const getConfigFilePath = () => getDataFilePath('config.json');
 
 // Default initial config matrix based on the 'Configuratie' sheet in 'Waardebepaling berekeningen.xlsx'
 const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
@@ -81,6 +82,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
 };
 
 export async function getConfigMatrix(): Promise<Record<string, ValuationConfig>> {
+    const CONFIG_FILE_PATH = getConfigFilePath();
     try {
         if (!fs.existsSync(CONFIG_FILE_PATH)) {
             // Ensure data directory exists
@@ -101,6 +103,7 @@ export async function getConfigMatrix(): Promise<Record<string, ValuationConfig>
 }
 
 export async function saveConfigMatrix(matrix: Record<string, ValuationConfig>): Promise<void> {
+    const CONFIG_FILE_PATH = getConfigFilePath();
     try {
         const dir = path.dirname(CONFIG_FILE_PATH);
         if (!fs.existsSync(dir)) {
