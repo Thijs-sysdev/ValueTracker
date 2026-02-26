@@ -8,7 +8,6 @@ main: electron/main.js
 # Output directory for built installers
 directories:
   output: dist-electron
-  buildResources: build-resources
 
 # Files to include in the packaged app
 files:
@@ -34,14 +33,12 @@ win:
   icon: public/logo.png
 
 nsis:
-  oneClick: false              # Show installer wizard
+  oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: "ValueTracker"
-  installerHeader: build-resources/installer-header.bmp
-  installerSidebar: build-resources/installer-sidebar.bmp
-  deleteAppDataOnUninstall: false   # Keep settings and data on uninstall
+  deleteAppDataOnUninstall: false
   displayLanguageSelector: false
   language: 1043                   # Dutch (Netherlands)
 
@@ -49,5 +46,5 @@ nsis:
 publish:
   provider: github
   owner: Thijs-sysdev
-  repo: OEV
+  repo: ValueTracker
   releaseType: release
