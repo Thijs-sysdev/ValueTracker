@@ -2,9 +2,6 @@ appId: com.parttracker.valuetracker
 productName: ValueTracker
 copyright: "Copyright © 2026 Parttracker BV"
 
-# The entry point for Electron
-main: electron/main.js
-
 # Output directory for built installers
 directories:
   output: dist-electron
@@ -40,7 +37,7 @@ nsis:
   shortcutName: "ValueTracker"
   deleteAppDataOnUninstall: false
   displayLanguageSelector: false
-  language: 1043                   # Dutch (Netherlands)
+  language: 1043
 
 # Auto-update: publish to GitHub Releases
 publish:
