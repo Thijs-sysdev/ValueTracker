@@ -22,7 +22,7 @@ export default function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="w-64 bg-slate-950 border-r border-slate-800/60 flex flex-col h-screen shrink-0 relative z-20">
+        <aside className="w-64 bg-transparent flex flex-col h-screen shrink-0 relative z-20">
             <div className="p-6 flex items-center justify-center shrink-0 transition-transform hover:scale-105 duration-500">
                 <Link href="/">
                     <Image
@@ -58,7 +58,7 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            <div className="p-4 space-y-1.5 border-t border-slate-800/50 bg-slate-950/50">
+            <div className="p-4 space-y-1.5 bg-transparent">
                 {bottomLinks.map((link) => {
                     const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
                     return (

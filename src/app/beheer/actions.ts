@@ -131,7 +131,7 @@ export async function getDatabaseStats() {
             topManufacturers,
             metadata
         };
-    } catch (error) {
+    } catch {
         return { success: false, error: "Kon database statistieken niet laden." };
     }
 }

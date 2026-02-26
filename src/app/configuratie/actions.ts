@@ -33,7 +33,7 @@ export async function addOrUpdateConfig(formData: FormData) {
 
         await saveConfigMatrix(configMatrix);
 
-        revalidatePath('/configuratie');
+        revalidatePath('/instellingen');
         return { success: true };
     } catch (error) {
         console.error("Fout bij opslaan configuratie:", error);
@@ -47,7 +47,7 @@ export async function deleteConfig(key: string): Promise<void> {
         if (configMatrix[key]) {
             delete configMatrix[key];
             await saveConfigMatrix(configMatrix);
-            revalidatePath('/configuratie');
+            revalidatePath('/instellingen');
         }
     } catch (error) {
         console.error("Fout bij verwijderen configuratie:", error);

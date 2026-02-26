@@ -12,9 +12,16 @@ export default function Dashboard() {
     useEffect(() => {
         async function fetchStats() {
             setIsLoading(true);
+            const cachedStats = sessionStorage.getItem('db_stats');
+            if (cachedStats) {
+                setStats(JSON.parse(cachedStats));
+                setIsLoading(false);
+                return;
+            }
             const res = await getDatabaseStats();
             if (res.success) {
                 setStats(res);
+                sessionStorage.setItem('db_stats', JSON.stringify(res));
             }
             setIsLoading(false);
         }
@@ -56,7 +63,7 @@ export default function Dashboard() {
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
                     <div className="max-w-xl">
                         <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-                            Welkom bij <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-blue-500">OEV</span>
+                            Welkom bij <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-blue-500">ValueTracker</span>
                         </h1>
                         <p className="text-lg text-slate-400 leading-relaxed">
                             Het centrale portaal voor de waardebepaling, prijsanalyse en beheer van industriële componenten.
@@ -139,13 +146,20 @@ export default function Dashboard() {
                             </p>
                         </div>
                     </div>
-                    <button className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors shrink-0 flex items-center gap-2 border border-slate-700">
-                        Bekijk Handleiding
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
                 </div>
             </Link>
 
-        </div>
+            <div className="flex justify-center pt-8">
+                <a href="/sjabloon-oev-v4-overtollige-artikelen-parttracker.xlsx" download="Sjabloon_Waardebepaling.xlsx" className="uiverse-download-btn group" title="Download Excel template voor waardebepaling (Intern gebruik)">
+                    <span className="mr-2 text-xs font-semibold">Sjabloon</span>
+                    <div className="icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 15L12 3M12 15L8 11M12 15L16 11M20 21H4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </div>
+                </a>
+            </div>
+
+        </div >
     );
 }

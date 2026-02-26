@@ -20,7 +20,7 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="antialiased h-screen w-screen bg-slate-950 text-slate-200 selection:bg-brand-500 selection:text-white flex overflow-hidden">
+      <body className="antialiased h-screen w-screen bg-[#0A0E17] text-slate-200 selection:bg-brand-500 selection:text-white flex overflow-hidden" suppressHydrationWarning>
         <UpdateBanner />
 
         {/* Persistent Sidebar */}

@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UploadCloud, Database, Loader2, Link as LinkIcon, AlertCircle, CheckCircle2, RefreshCw, FileText, ChevronDown, Search, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { UploadCloud, Database, Loader2, AlertCircle, CheckCircle2, RefreshCw, FileText, ChevronDown } from 'lucide-react';
 import { getDatabaseStats, uploadPriceListAction, checkPriceListAction } from './actions';
 
 // Helper function to normalize brand names for grouping in the filter
@@ -26,8 +24,6 @@ function normalizeBrandName(name: string): string {
 }
 
 export default function DatabaseBeheer() {
-    const router = useRouter();
-    const [isDeepLinked, setIsDeepLinked] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isStatsLoading, setIsStatsLoading] = useState(true);
@@ -50,11 +46,20 @@ export default function DatabaseBeheer() {
         fetchStats();
     }, []);
 
-    const fetchStats = async () => {
+    const fetchStats = async (forceRefresh = false) => {
         setIsStatsLoading(true);
+        if (!forceRefresh) {
+            const cachedStats = sessionStorage.getItem('db_stats');
+            if (cachedStats) {
+                setStats(JSON.parse(cachedStats));
+                setIsStatsLoading(false);
+                return;
+            }
+        }
         const res = await getDatabaseStats();
         if (res.success) {
             setStats(res);
+            sessionStorage.setItem('db_stats', JSON.stringify(res));
         }
         setIsStatsLoading(false);
     };
@@ -147,7 +152,7 @@ export default function DatabaseBeheer() {
             const response = await uploadPriceListAction(formData);
             if (response.success) {
                 setMessage({ text: response.message || "Succes!", type: 'success' });
-                await fetchStats();
+                await fetchStats(true);
             } else {
                 setMessage({ text: response.error || "Fout bij verwerken lijst.", type: 'error' });
             }
@@ -179,7 +184,7 @@ export default function DatabaseBeheer() {
     });
 
     return (
-        <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12">
+        <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
 
             {/* Upload Validation Modal */}
             {confirmStep !== 'closed' && checkResult && (
@@ -293,27 +298,17 @@ export default function DatabaseBeheer() {
             )}
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 dark:border-slate-800 pb-6 glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                <div className="absolute -left-12 -top-12 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl"></div>
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-slate-900 dark:bg-white rounded-lg">
-                            <Database className="w-5 h-5 text-white dark:text-slate-900" />
-                        </div>
-                        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Database Beheer</h2>
+            <div className="flex flex-col gap-2 mb-8">
+                <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                    <div className="p-2.5 bg-brand-500/20 text-brand-400 rounded-xl relative group">
+                        <div className="absolute inset-0 bg-brand-400/20 blur-xl group-hover:bg-brand-400/40 transition-colors"></div>
+                        <Database className="w-6 h-6 relative z-10" />
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        Upload hier nieuwe prijslijsten van leveranciers. Deze worden direct aan het collectieve geheugen van de applicatie toegevoegd.
-                    </p>
-                </div>
-
-                <Link
-                    href="/"
-                    className="flex items-center gap-2 text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl hover:shadow-md transition-all z-10 hover:-translate-y-0.5"
-                >
-                    <LinkIcon size={16} />
-                    Naar Waardebepaling
-                </Link>
+                    Database Beheer
+                </h2>
+                <p className="text-slate-400 text-lg">
+                    Upload hier nieuwe prijslijsten van leveranciers. Deze worden direct aan het collectieve geheugen van de applicatie toegevoegd.
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -379,7 +374,7 @@ export default function DatabaseBeheer() {
                 <div className="space-y-6">
                     <h3 className="text-xl font-bold flex items-center justify-between">
                         Database Status
-                        <button onClick={fetchStats} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <button onClick={() => fetchStats(true)} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                             <RefreshCw size={18} className={isStatsLoading ? 'animate-spin' : ''} />
                         </button>
                     </h3>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UploadCloud, FileSpreadsheet, Loader2, Download, CheckCircle2, XCircle, AlertCircle, Database, History, Settings } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, Loader2, Download, CheckCircle2, XCircle, AlertCircle, Info, Calculator, FileText, Settings as SettingsIcon } from 'lucide-react';
 import { processValuationFile } from './actions';
 import { ValuationOutput } from '@/lib/types';
 
@@ -112,49 +112,16 @@ export default function Dashboard() {
   const acceptedRatio = results ? (results.filter(r => r.status === 'ACCEPTED').length / results.length) * 100 : 0;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12">
+    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
 
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">ValueTracker</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Waarde bepaling</h2>
           <p className="text-slate-500 dark:text-slate-400 max-w-2xl">
             Upload een Parttracker Excel-bestand (of klantsjabloon) om direct de afschrijving, conditiestraffen en inkoopwaarde te berekenen.
           </p>
         </div>
-        <div className="flex items-center pt-1 md:pt-0 gap-3">
-          <Link
-            href="/configuratie"
-            className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/50 px-4 py-2.5 rounded-xl transition-all shadow-sm group"
-          >
-            <Settings size={16} className="group-hover:rotate-90 transition-transform" />
-            <span>Configuratie</span>
-          </Link>
-          <Link
-            href="/prijs-database"
-            className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/50 px-4 py-2.5 rounded-xl transition-all shadow-sm group"
-          >
-            <History size={16} className="group-hover:-rotate-45 transition-transform" />
-            <span>Prijs Database</span>
-          </Link>
-          <Link
-            href="/beheer"
-            className="flex items-center gap-2 text-sm font-semibold text-brand-700 dark:text-teal-400 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:hover:bg-brand-900/40 border border-brand-200 dark:border-brand-800/50 px-4 py-2.5 rounded-xl transition-all shadow-sm group"
-          >
-            <Database size={16} className="group-hover:scale-110 transition-transform" />
-            <span>Naar Database Beheer</span>
-          </Link>
-        </div>
-      </div>
-      <div className="absolute bottom-0 right-4 transform translate-y-1/2">
-        <a href="/sjabloon-oev-v4-overtollige-artikelen-parttracker.xlsx" download="Sjabloon_Waardebepaling.xlsx" className="uiverse-download-btn group" title="Download Excel template voor waardebepaling (Intern gebruik)">
-          <span className="mr-2 text-xs font-semibold">Sjabloon</span>
-          <div className="icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 15L12 3M12 15L8 11M12 15L16 11M20 21H4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </a>
       </div>
 
       {/* Upload Zone */}
