@@ -1,6 +1,7 @@
 'use server';
 
 import { getDataDir, getSettingsFilePath, saveDataDirSetting, resetDataDirCache } from '@/lib/dataPath';
+import { clearPriceListCache } from '@/lib/priceList';
 import fs from 'fs';
 
 export async function getDataDirSettings() {
@@ -26,6 +27,7 @@ export async function updateDataDir(newDataDir: string): Promise<{ success: bool
 
         saveDataDirSetting(trimmed);
         resetDataDirCache();
+        clearPriceListCache();
 
         return { success: true };
     } catch (e: unknown) {
@@ -41,6 +43,7 @@ export async function resetDataDir(): Promise<{ success: boolean }> {
             fs.unlinkSync(settingsFile);
         }
         resetDataDirCache();
+        clearPriceListCache();
         return { success: true };
     } catch {
         return { success: false };

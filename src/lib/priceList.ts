@@ -8,6 +8,11 @@ import { getDataFilePath } from './dataPath';
 let cachedPriceList: Record<string, PriceReference> | null = null;
 let loadAttempted = false;
 
+export function clearPriceListCache() {
+    cachedPriceList = null;
+    loadAttempted = false;
+}
+
 export function getPriceList(): Record<string, PriceReference> {
     if (cachedPriceList || loadAttempted) {
         return cachedPriceList || {};

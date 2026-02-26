@@ -20,7 +20,7 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
         startTransition(async () => {
             const result = await updateDataDir(inputValue);
             if (result.success) {
-                setMessage({ type: 'success', text: '✅ Opgeslagen! Herstart de app om de nieuwe map te gebruiken.' });
+                setMessage({ type: 'success', text: '✅ Opgeslagen! De nieuwe map is direct actief.' });
             } else {
                 setMessage({ type: 'error', text: `❌ ${result.error}` });
             }
@@ -32,15 +32,13 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
             const result = await resetDataDir();
             if (result.success) {
                 setInputValue('');
-                setMessage({ type: 'success', text: '✅ Teruggezet naar standaard (./data/). Herstart de app.' });
+                setMessage({ type: 'success', text: '✅ Teruggezet naar standaard (./data/).' });
             }
         });
     };
 
     return (
         <div className="settings-form">
-            {/* Back button */}
-            <Link href="/" className="back-link">← Terug naar overzicht</Link>
             <div className="settings-field">
                 <label htmlFor="dataDir">Data map pad</label>
                 <div className="settings-input-row">

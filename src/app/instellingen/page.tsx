@@ -1,5 +1,6 @@
 import { getDataDirSettings } from './actions';
 import SettingsForm from './SettingsForm';
+import Link from 'next/link';
 
 export const metadata = {
     title: 'Instellingen | ValueTracker',
@@ -12,6 +13,7 @@ export default async function InstellingenPage() {
     return (
         <main className="page-container">
             <div className="page-header">
+                <Link href="/" className="back-link mb-3 inline-flex">← Terug naar overzicht</Link>
                 <h1>Instellingen</h1>
                 <p className="page-subtitle">
                     Configureer waar de app zijn data opslaat — lokaal of via OneDrive.
