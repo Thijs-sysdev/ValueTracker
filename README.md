@@ -1,6 +1,6 @@
-# Waardebepaling OEV
+# ValueTracker
 
-> **Parttracker BV** — Automatische waardebepalings-tool voor surplus elektronica inventaris
+> **Parttracker BV** — Geautomatiseerde waardebepalingstool voor surplus elektronica inventaris
 
 ![Version](https://img.shields.io/badge/versie-1.0.0-teal)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
@@ -8,9 +8,9 @@
 
 ---
 
-## 📋 Wat doet de app?
+## 📋 Wat doet ValueTracker?
 
-Waardebepaling OEV is een desktop applicatie waarmee je snel en nauwkeurig een **inkoopwaardebepaling** kunt uitvoeren op surplus industriële elektronica (PLC's, HMI's, frequentieregelaars, etc.). De app berekent automatisch de verkoop- en inkoopwaarde op basis van catalogusprijzen, afschrijvingsregels en de conditie van het materiaal.
+**ValueTracker** is een Windows desktop applicatie waarmee je snel en nauwkeurig een **inkoopwaardebepaling** kunt uitvoeren op surplus industriële elektronica (PLC's, HMI's, frequentieregelaars, etc.). De app berekent automatisch de verkoop- en inkoopwaarde op basis van catalogusprijzen, afschrijvingsregels en de conditie van het materiaal.
 
 ---
 
@@ -18,13 +18,13 @@ Waardebepaling OEV is een desktop applicatie waarmee je snel en nauwkeurig een *
 
 ### 🧮 Waardebepaling
 - Upload een **klantexcel** (.xlsx) met een lijst van artikelen
-- De app zoekt automatisch de **catalogusprijs** op per artikel en jaar
+- Zoekt automatisch de **catalogusprijs** op per artikel en jaar
 - Berekent de **verkoopwaarde** op basis van:
   - Leeftijd van het artikel (aanschafdatum)
   - Afschrijving jaar 1 en opvolgende jaren (per merk/categorie instelbaar)
   - Conditiestraf (NOB / NIBS)
 - Artikelen in conditie **USED**, **REV** of **REP** worden automatisch **afgewezen**
-- Resultaten worden weergegeven in een overzichtelijke tabel met per artikel:
+- Resultaten per artikel:
   - Verkoopwaarde
   - Inkoopwaarde Consignatie (75% van verkoop)
   - Inkoopwaarde Extern (80% van verkoop)
@@ -37,11 +37,11 @@ Waardebepaling OEV is een desktop applicatie waarmee je snel en nauwkeurig een *
 - Afgewezen artikelen worden automatisch uitgesloten van de export
 
 ### 📚 Database Beheer
-- Upload **leveranciersprijs­lijsten** (Excel) via drag & drop
-- De app controleert automatisch of een prijslijst al eerder is ingelezen
-- Prijzen worden **per jaar opgeslagen** als historisch tijdlijn per artikel
-- Artikelprijzen worden automatisch geïnterpoleerd als het exacte jaar ontbreekt
-- **Prijshistorie zoeken**: zoek op artikelnummer en bekijk een interactieve grafiek van de prijsontwikkeling over de jaren
+- Upload **leveranciersprijslijsten** (Excel) via drag & drop
+- Controleert automatisch of een prijslijst al eerder is ingelezen
+- Prijzen worden **per jaar opgeslagen** als historische tijdlijn per artikel
+- Automatische **interpolatie** als het exacte jaar ontbreekt
+- **Prijshistorie zoeken**: zoek op artikelnummer en bekijk een interactieve grafiek van de prijsontwikkeling
 - Overzichtstabel van alle ingelezen prijslijsten met filters op merk, jaar en bestandsnaam
 - **Auto-learning**: nieuw opgezochte prijzen worden automatisch teruggeschreven naar de database
 
@@ -51,36 +51,36 @@ Waardebepaling OEV is een desktop applicatie waarmee je snel en nauwkeurig een *
   - Afschrijving opvolgende jaren (%)
   - Conditiestraf NOB (%)
   - Conditiestraf NIBS (%)
-- Sla configuraties op; wijzigingen zijn direct actief
+- Wijzigingen zijn direct actief
 
 ### 📜 Historie
-- Elke uitgevoerde waardebepaling wordt automatisch **opgeslagen** met datum, klantnaam en alle resultaten
+- Elke uitgevoerde waardebepaling wordt automatisch **opgeslagen**
 - Bekijk vroegere waardebepalingen en exporteer ze opnieuw
 
 ### 🗂️ Data Locatie (OneDrive / Lokaal)
-- Stel in via **Instellingen** (⚙️ tandwiel) waar de app zijn data opslaat:
-  - Lokaal (`./data/`) — standaard
+- Instelbaar via **Instellingen** (⚙️ tandwiel rechtsboven):
+  - Lokaal (`./data/`) — standaard op je eigen pc
   - OneDrive map — voor gedeeld gebruik met collega's
-- De instelling wordt per pc opgeslagen; iedere gebruiker wijst naar de juiste map
+- De instelling wordt per pc opgeslagen
 
 ### 🔄 Automatische updates
-- De app controleert bij elke start of er een nieuwe versie beschikbaar is
+- Controleert bij elke start of er een nieuwe versie beschikbaar is op GitHub
 - Updates worden stil op de achtergrond gedownload
-- Een melding verschijnt zodra de update gereed is; je kiest zelf wanneer je herstart
+- Een melding (rechtsonder) verschijnt zodra de update gereed is
 
 ---
 
 ## 💻 Installatie (Windows)
 
-### Optie A — Installer downloaden (aanbevolen)
+### Optie A — Installer downloaden ✅ (aanbevolen)
 
-1. Ga naar de [**Releases**](https://github.com/Thijs-sysdev/OEV/releases) pagina van deze repository
-2. Download de nieuwste `WaardebepalingSetup-x.x.x.exe`
+1. Ga naar de [**Releases**](https://github.com/Thijs-sysdev/OEV/releases) pagina
+2. Download de nieuwste **`ValueTrackerSetup-x.x.x.exe`**
 3. Voer het installatiebestand uit en volg de wizard
 4. De app verschijnt als snelkoppeling op het bureaublad en in het Startmenu
 5. Dubbelklik om te starten
 
-> **Eerste keer opstarten:** ga naar het ⚙️ tandwiel (rechtsboven) → **Instellingen** en stel de data map in als je OneDrive gebruikt.
+> **Eerste keer opstarten:** klik op het ⚙️ tandwiel (rechtsboven) → **Instellingen** en stel de data map in als je OneDrive gebruikt.
 
 ---
 
@@ -113,18 +113,17 @@ Of dubbelklik op **`Start Waardebepaling.bat`** — dit doet stappen 2-4 automat
 
 Als je de app deelt met collega's via OneDrive:
 
-1. Maak een gedeelde map aan op OneDrive, bijv.:
+1. Maak een gedeelde map aan, bijv.:
    ```
-   C:\Users\[naam]\OneDrive - Parttracker BV\Apps\Waardebepaling OEV\
+   C:\Users\[naam]\OneDrive - Parttracker BV\Apps\ValueTracker\
    ```
-2. Kopieer de bestanden uit de lokale `data/` map naar die OneDrive map:
+2. Kopieer de bestanden uit de lokale `data/` map:
    - `config.json`
    - `history.json`
    - `price_db.json`
    - `price_db_meta.json`
-3. Open de app → klik op ⚙️ (rechtsboven) → **Instellingen**
-4. Vul het volledige pad in → klik **Opslaan**
-5. Herstart de app
+3. Open ValueTracker → klik op ⚙️ → **Instellingen**
+4. Vul het volledige pad in → klik **Opslaan** → herstart de app
 
 Alle gebruikers die naar dezelfde OneDrive map wijzen, delen automatisch dezelfde data.
 
@@ -136,7 +135,7 @@ Alle gebruikers die naar dezelfde OneDrive map wijzen, delen automatisch dezelfd
 2. Verhoog het versienummer in `package.json` (bijv. `"version": "1.1.0"`)
 3. Merge `dev` → `main`
 4. GitHub Actions bouwt automatisch een nieuwe installer en publiceert die als GitHub Release
-5. Draaiende apps detecteren de update en tonen een melding
+5. Draaiende apps detecteren de update automatisch
 
 ---
 
@@ -157,4 +156,4 @@ Alle gebruikers die naar dezelfde OneDrive map wijzen, delen automatisch dezelfd
 
 ## 📞 Vragen?
 
-Neem contact op met de ontwikkelaar of maak een [Issue](https://github.com/Thijs-sysdev/OEV/issues) aan.
+Maak een [Issue](https://github.com/Thijs-sysdev/OEV/issues) aan of neem contact op met de ontwikkelaar.

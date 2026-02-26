@@ -1,5 +1,5 @@
-appId: com.parttracker.waardebepaling
-productName: Waardebepaling OEV
+appId: com.parttracker.valuetracker
+productName: ValueTracker
 copyright: "Copyright © 2026 Parttracker BV"
 
 # The entry point for Electron
@@ -38,7 +38,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: "Waardebepaling OEV"
+  shortcutName: "ValueTracker"
   installerHeader: build-resources/installer-header.bmp
   installerSidebar: build-resources/installer-sidebar.bmp
   deleteAppDataOnUninstall: false   # Keep settings and data on uninstall

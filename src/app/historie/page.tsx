@@ -16,7 +16,7 @@ export default function HistoriePage() {
                         <Link href="/" className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
                             <ArrowLeft size={20} />
                         </Link>
-                        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Waardebepaling Historie</h2>
+                        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">ValueTracker Historie</h2>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 max-w-2xl pl-11">
                         Bekijk eerdere waardebepalingen en de berekende resultaten.

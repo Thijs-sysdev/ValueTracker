@@ -2,7 +2,7 @@ import { getDataDirSettings } from './actions';
 import SettingsForm from './SettingsForm';
 
 export const metadata = {
-    title: 'Instellingen | Waardebepaling OEV',
+    title: 'Instellingen | ValueTracker',
     description: 'Configureer de data map voor lokale of OneDrive opslag.',
 };
 

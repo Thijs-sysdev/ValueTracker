@@ -5,8 +5,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import UpdateBanner from "@/components/UpdateBanner";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Parttracker Waardebepaling",
-  description: "Automated surplus inventory valuation built with Next.js",
+  title: "ValueTracker",
+  description: "Parttracker BV — automated surplus inventory valuation",
 };
 
 export default function RootLayout({

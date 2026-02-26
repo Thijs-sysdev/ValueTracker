@@ -5,7 +5,7 @@
  *
  * Priority order:
  *  1. WAARDEBEPALING_DATA_DIR environment variable (useful for Electron / testing)
- *  2. Settings file at %APPDATA%/Waardebepaling/settings.json  → { "dataDir": "..." }
+ *  2. Settings file at %APPDATA%/ValueTracker/settings.json  → { "dataDir": "..." }
  *  3. Fallback: ./data/ relative to process.cwd() (default for local dev / home PC)
  */
 
@@ -17,7 +17,7 @@ const SETTINGS_FILE = path.join(
     os.homedir(),
     'AppData',
     'Roaming',
-    'Waardebepaling',
+    'ValueTracker',
     'settings.json'
 );
 

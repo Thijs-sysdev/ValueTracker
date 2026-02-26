@@ -1,7 +1,7 @@
 {
-  "name": "waardebepaling-oev",
+  "name": "valuetracker",
   "version": "1.0.0",
-  "description": "Parttracker Waardebepaling OEV — surplus inventory valuation tool",
+  "description": "Parttracker BV — ValueTracker surplus inventory valuation tool",
   "private": true,
   "main": "electron/main.js",
   "scripts": {

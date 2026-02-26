@@ -1,8 +1,8 @@
 @echo off
-title Waardebepaling OEV
+title ValueTracker
 echo.
 echo  ============================================
-echo   Waardebepaling OEV - Parttracker BV
+echo   ValueTracker - Parttracker BV
 echo  ============================================
 echo.
 echo  App wordt gestart, even geduld...

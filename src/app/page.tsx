@@ -117,7 +117,7 @@ export default function Dashboard() {
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Waardebepaling</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">ValueTracker</h2>
           <p className="text-slate-500 dark:text-slate-400 max-w-2xl">
             Upload een Parttracker Excel-bestand (of klantsjabloon) om direct de afschrijving, conditiestraffen en inkoopwaarde te berekenen.
           </p>

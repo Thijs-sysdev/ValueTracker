@@ -45,7 +45,7 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Bijv. C:\Users\...\OneDrive - Parttracker BV\Apps\Waardebepaling OEV"
+                        placeholder="Bijv. C:\Users\...\OneDrive - Parttracker BV\Apps\ValueTracker"
                         className="settings-input"
                     />
                     <button
@@ -107,7 +107,7 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
             <div className="settings-info-box">
                 <strong>💡 OneDrive instelling (werk-pc)</strong>
                 <p>Stel dit pad in op je werk-pc:</p>
-                <code>C:\Users\ThijsRosmalen\OneDrive - Parttracker BV\Apps\Waardebepaling OEV</code>
+                <code>C:\Users\ThijsRosmalen\OneDrive - Parttracker BV\Apps\ValueTracker</code>
                 <p style={{ marginTop: '0.5rem' }}>
                     Zorg dat je collega&apos;s toegang hebben tot dezelfde OneDrive map.
                     Iedereen die de app opent wijst naar dezelfde bestanden.
