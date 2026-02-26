@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { PriceReference } from './types';
+import { getDataFilePath } from './dataPath';
 
 // In a real production app, this would be a database.
 // For now, we load and cache the JSON lookup in memory during the server lifecycle.
@@ -15,7 +16,7 @@ export function getPriceList(): Record<string, PriceReference> {
     loadAttempted = true;
     cachedPriceList = {};
 
-    const filePath = path.join(process.cwd(), 'data', 'price_db.json');
+    const filePath = getDataFilePath('price_db.json');
 
     try {
         if (!fs.existsSync(filePath)) {
@@ -102,7 +103,7 @@ export function addLearnedPrices(newPrices: { manufacturer: string, article_numb
     if (!newPrices || newPrices.length === 0) return;
 
     const list = getPriceList() as any;
-    const filePath = path.join(process.cwd(), 'data', 'price_db.json');
+    const filePath = getDataFilePath('price_db.json');
     let updatedCount = 0;
 
     for (const newPrice of newPrices) {

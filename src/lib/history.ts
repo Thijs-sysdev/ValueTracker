@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { HistoryItem } from './types';
+import { getDataFilePath } from './dataPath';
 
-const getHistoryFilePath = () => path.join(process.cwd(), 'data', 'history.json');
+const getHistoryFilePath = () => getDataFilePath('history.json');
 
 export function getHistories(): HistoryItem[] {
     const filePath = getHistoryFilePath();
