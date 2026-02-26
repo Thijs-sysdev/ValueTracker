@@ -1,0 +1,27 @@
+# Task Plan
+## Phases and Goals
+- [x] **Phase 0: Initialization**
+  - [x] Initialize Project Memory (task_plan.md, findings.md, progress.md, gemini.md)
+  - [x] Await Discovery Questions answers from user
+- [x] **Phase 1: Blueprint**
+  - [x] Define North Star & Core Goal
+  - [x] Identify Integrations & API Keys
+  - [x] Map Source of Truth
+  - [x] Define Delivery Payload & Data Schema (Excel formulas parsed)
+  - [x] Research missing components/dependencies
+- [ ] **Phase 2: Link & Phase 3: Architect (Building)**
+  - [ ] Initialize Next.js project
+  - [ ] Implement Server-side Excel Parsing and Price mapping
+  - [ ] Implement Deterministic Valuation Engine
+  - [ ] Build Frontend UI (Dashboard)
+- [ ] **Phase 3: Architect**
+  - [ ] Write Technical SOPs (`architecture/`)
+  - [ ] Implement deterministic Python scripts (`tools/`)
+- [ ] **Phase 4: Stylize**
+  - [ ] Refine Payload & Output formatting
+  - [ ] UI/UX updates (if applicable)
+  - [ ] Review & Feedback
+- [ ] **Phase 5: Trigger**
+  - [ ] Cloud Transfer
+  - [ ] Setup Automation/Triggers
+  - [ ] Document Maintenance Log in `gemini.md`
