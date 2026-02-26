@@ -14,8 +14,10 @@ const http = require('http');
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const PORT = 3000;
-const NEXT_SERVER = path.join(__dirname, '..', '.next', 'standalone', 'server.js');
 const IS_DEV = !app.isPackaged;
+const NEXT_SERVER = IS_DEV
+    ? path.join(__dirname, '..', '.next', 'standalone', 'server.js')
+    : path.join(__dirname, '..', '..', 'app.asar.unpacked', '.next', 'standalone', 'server.js');
 
 let mainWindow = null;
 
@@ -81,10 +83,12 @@ function startNextServer() {
         const standaloneDir = path.dirname(NEXT_SERVER);
 
         try {
-            // Change CWD so that server.js can resolve its own relative paths
+            // Because .next/standalone is now in app.asar.unpacked,
+            // standaloneDir is a real physical folder!
+            // We MUST change the directory to it so Next.js finds its files.
             process.chdir(standaloneDir);
         } catch (e) {
-            console.warn('[next] Could not chdir to standalone dir:', e.message);
+            console.warn('[next] Could not chdir to standalone env:', e.message);
         }
 
         // require() starts the server in-process — no child process needed.
