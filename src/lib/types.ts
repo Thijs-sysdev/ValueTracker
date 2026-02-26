@@ -58,6 +58,7 @@ export interface HistoryItem {
     id: string;
     date: string;
     fileName: string;
+    createdBy?: string;
     totalSalesValue: number;
     itemsProcessed: number;
     acceptedItems: number;

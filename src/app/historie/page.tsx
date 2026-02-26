@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getHistories } from "@/lib/history";
-import { History, FileSpreadsheet, ArrowLeft, ArrowRight } from "lucide-react";
+import { History, FileSpreadsheet, ArrowLeft, ArrowRight, User } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +49,8 @@ export default function HistoriePage() {
                                         </h3>
                                         <div className="flex items-center gap-3 text-sm font-medium text-slate-500 mt-1">
                                             <span>{new Date(item.date).toLocaleString('nl-NL')}</span>
+                                            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+                                            <span className="flex items-center gap-1"><User size={14} /> {item.createdBy || 'Onbekend'}</span>
                                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
                                             <span>{item.itemsProcessed} rijen</span>
                                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>

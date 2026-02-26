@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Download, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
+import { Download, CheckCircle2, XCircle, ArrowLeft, User } from 'lucide-react';
 import { HistoryItem } from '@/lib/types';
 
 export default function HistoryDetailClient({ item }: { item: HistoryItem }) {
@@ -17,10 +17,11 @@ export default function HistoryDetailClient({ item }: { item: HistoryItem }) {
             const cost = type === 'consignment' ? r.purchase_value_consignment : r.purchase_value_external;
             const sku = r.sku ?? r.article_number;
             const qty = r.quantity ?? 1;
-            return `${sku},${qty},${r.sales_value.toFixed(2)},${cost.toFixed(2)}`;
+            const user = item.createdBy || 'Onbekend';
+            return `${sku},${qty},${r.sales_value.toFixed(2)},${cost.toFixed(2)},${user}`;
         });
 
-        const csvContent = "SKU,Aantal,SalesPrice,Cost(per piece)\n" + lines.join("\n");
+        const csvContent = "SKU,Aantal,SalesPrice,Cost(per piece),Gebruiker\n" + lines.join("\n");
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -47,8 +48,11 @@ export default function HistoryDetailClient({ item }: { item: HistoryItem }) {
                             Resultaat: {fileName}
                         </h2>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400 max-w-2xl pl-11">
-                        Berekend op {new Date(date).toLocaleString('nl-NL')}
+                    <p className="text-slate-500 dark:text-slate-400 max-w-2xl pl-11 flex items-center gap-4">
+                        <span>Berekend op {new Date(date).toLocaleString('nl-NL')}</span>
+                        {item.createdBy && (
+                            <span className="flex items-center gap-1.5"><User size={14} /> {item.createdBy}</span>
+                        )}
                     </p>
                 </div>
             </div>
