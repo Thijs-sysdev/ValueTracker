@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { updateDataDir, updatePriceListsDir } from './actions';
 
 interface Props {
@@ -16,12 +17,14 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [priceListsMessage, setPriceListsMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
 
     const handleSave = () => {
         startTransition(async () => {
             const result = await updateDataDir(inputValue);
             if (result.success) {
                 setMessage({ type: 'success', text: '✅ Opgeslagen! De nieuwe map is direct actief.' });
+                router.refresh();
             } else {
                 setMessage({ type: 'error', text: `❌ ${result.error}` });
             }
@@ -33,6 +36,7 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
             const result = await updatePriceListsDir(priceListsInputValue);
             if (result.success) {
                 setPriceListsMessage({ type: 'success', text: '✅ Opgeslagen! De nieuwe map is ingesteld.' });
+                router.refresh();
             } else {
                 setPriceListsMessage({ type: 'error', text: `❌ ${result.error}` });
             }
