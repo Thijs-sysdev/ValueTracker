@@ -607,3 +607,28 @@ body {
 .update-btn-ghost:hover {
   opacity: 1;
 }
+
+/* ── Custom Scrollbar ───────────────────────────────────── */
+/* Invisible by default, appears on hover, white thumb, no background */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  /* hidden vertically until hover */
+  border-radius: 4px;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: #FFFFFF;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.8);
+}
