@@ -122,6 +122,15 @@ export default function Dashboard() {
             Upload een Parttracker Excel-bestand (of klantsjabloon) om direct de afschrijving, conditiestraffen en inkoopwaarde te berekenen.
           </p>
         </div>
+        <a
+          href="/sjabloon-oev-v4-overtollige-artikelen-parttracker.xlsx"
+          download="Sjabloon_Waardebepaling.xlsx"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-500 bg-slate-800/20 hover:bg-slate-800/60 hover:text-slate-300 border border-slate-700/30 hover:border-slate-700/80 rounded-xl transition-all h-fit"
+          title="Download referentie sjabloon"
+        >
+          <Download size={16} />
+          <span>Sjabloon</span>
+        </a>
       </div>
 
       {/* Upload Zone */}

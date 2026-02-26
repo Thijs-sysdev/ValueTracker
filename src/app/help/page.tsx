@@ -38,7 +38,7 @@ export default function HelpPage() {
     ];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
+        <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
 
             {/* Header */}
             <div className="flex flex-col gap-2 mb-8">

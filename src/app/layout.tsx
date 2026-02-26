@@ -20,31 +20,33 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="antialiased h-screen w-screen bg-[#0A0E17] text-slate-200 selection:bg-brand-500 selection:text-white flex overflow-hidden" suppressHydrationWarning>
-        <UpdateBanner />
+      <body className="antialiased h-screen w-screen bg-[#0A0E17] text-slate-200 selection:bg-brand-500 selection:text-white overflow-hidden relative" suppressHydrationWarning>
+        {/* Subtle global background gradients for premium feel */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-brand-500/10 blur-[120px]" />
+          <div className="absolute top-[40%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px]" />
+        </div>
 
-        {/* Persistent Sidebar */}
-        <Sidebar />
+        <div className="relative z-10 flex h-full w-full">
+          {/* Persistent Sidebar */}
+          <Sidebar />
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col relative overflow-hidden bg-[#0A0E17]">
-          {/* Subtle global background gradients for premium feel */}
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-brand-500/10 blur-[120px]" />
-            <div className="absolute top-[40%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px]" />
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-transparent">
+            <UpdateBanner />
+
+            {/* Top Header */}
+            <TopHeader />
+
+            {/* Scrollable Page Content */}
+            <main className="flex-1 overflow-x-hidden overflow-y-auto relative z-10 custom-scrollbar">
+              <div className="h-full">
+                <PageTransition>
+                  {children}
+                </PageTransition>
+              </div>
+            </main>
           </div>
-
-          {/* Top Header */}
-          <TopHeader />
-
-          {/* Scrollable Page Content */}
-          <main className="flex-1 overflow-x-hidden overflow-y-auto relative z-10 custom-scrollbar">
-            <div className="h-full">
-              <PageTransition>
-                {children}
-              </PageTransition>
-            </div>
-          </main>
         </div>
       </body>
     </html>
