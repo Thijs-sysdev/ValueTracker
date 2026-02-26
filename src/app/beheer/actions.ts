@@ -55,7 +55,7 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
 
             const strCols = row.map(c => typeof c === 'string' ? c.toLowerCase() : '');
             let possibleArtIdx = -1;
-            let possiblePriceCols: { idx: number, year: number | null }[] = [];
+            const possiblePriceCols: { idx: number, year: number | null }[] = [];
             let possiblePriceUnitIdx = -1;
 
             for (let c = 0; c < strCols.length; c++) {
@@ -109,7 +109,6 @@ export async function getDatabaseStats() {
         });
 
         const totalItems = uniqueItems.size;
-        const totalKeys = Object.keys(db).length;
 
         const mList = Array.from(manufacturers);
         const topManufacturers = mList.slice(0, 5).join(', ') + (mList.length > 5 ? '...' : '');
@@ -120,8 +119,8 @@ export async function getDatabaseStats() {
         if (fs.existsSync(metaPath)) {
             try {
                 metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-            } catch (e) {
-                console.error("Failed to parse metadata", e);
+            } catch (_e) {
+                console.error("Failed to parse metadata", _e);
             }
         }
 
@@ -181,7 +180,7 @@ export async function uploadPriceListAction(formData: FormData) {
             const row = data[i];
             if (!row || !Array.isArray(row)) continue;
 
-            let artCodeRaw = row[artIdx];
+            const artCodeRaw = row[artIdx];
             if (artCodeRaw === undefined || artCodeRaw === null) continue;
 
             const artCode = artCodeRaw.toString().trim();
@@ -203,7 +202,7 @@ export async function uploadPriceListAction(formData: FormData) {
 
             // Loop through all detected price columns
             for (const pCol of priceCols) {
-                let priceRaw = row[pCol.idx];
+                const priceRaw = row[pCol.idx];
                 if (priceRaw === undefined || priceRaw === null) continue;
 
                 let parsedPrice = parseExcelPrice(priceRaw);
@@ -346,7 +345,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
 
         // Check metadata for existing year + manufacturer combo
         const metaPath = path.join(process.cwd(), 'data', 'price_db_meta.json');
-        let existingUploadDates: string[] = [];
+        const existingUploadDates: string[] = [];
 
         const detectedYears = Array.from(new Set(priceCols.map((p: any) => p.year !== null ? p.year : detectedYear)));
 
@@ -357,7 +356,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
                     const existing = metaLog.find(m => m.year === y && m.manufacturer === defaultManufacturer);
                     if (existing) existingUploadDates.push(existing.addedAt);
                 }
-            } catch (e) { /* ignore */ }
+            } catch { /* ignore */ }
         }
 
         // Load existing DB to count new articles

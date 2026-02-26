@@ -23,7 +23,7 @@ export default function ConfigForm() {
             } else {
                 setError(result.error || "Fout bij opslaan");
             }
-        } catch (e) {
+        } catch {
             setError("Netwerk fout");
         } finally {
             setIsLoading(false);

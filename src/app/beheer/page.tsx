@@ -5,7 +5,7 @@ import { UploadCloud, Database, Loader2, Link as LinkIcon, AlertCircle, CheckCir
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getDatabaseStats, uploadPriceListAction, searchArticleHistory, checkPriceListAction } from './actions';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Helper function to normalize brand names for grouping in the filter
 function normalizeBrandName(name: string): string {
@@ -91,7 +91,7 @@ export default function DatabaseBeheer() {
             } else {
                 setSearchError("Product niet gevonden in de database.");
             }
-        } catch (err) {
+        } catch {
             setSearchError("Fout bij het zoeken.");
         } finally {
             setIsSearching(false);
@@ -204,7 +204,7 @@ export default function DatabaseBeheer() {
     };
 
     // Calculate chart statistics if a result exists
-    let chartData = [];
+    const chartData = [];
     let minPrice = 0;
     let maxPrice = 0;
     let avgChangePct = 0;
@@ -217,7 +217,7 @@ export default function DatabaseBeheer() {
         searchResult.history.forEach((h: any) => historyMap.set(h.year, h.price));
 
         const minYear = Math.min(...searchResult.history.map((h: any) => h.year));
-        let maxYear = Math.max(new Date().getFullYear(), Math.max(...searchResult.history.map((h: any) => h.year)));
+        const maxYear = Math.max(new Date().getFullYear(), Math.max(...searchResult.history.map((h: any) => h.year)));
 
         for (let y = minYear; y <= maxYear; y++) {
             chartData.push({

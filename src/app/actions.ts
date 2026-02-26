@@ -77,7 +77,7 @@ export async function processValuationFile(formData: FormData): Promise<{
             if (!row || row.length === 0 || !row[mappings.article_number]) continue;
 
             // Excel dates are sometimes numbers (days since 1900). We need to handle this.
-            let dateVal = row[mappings.purchase_date];
+            const dateVal = row[mappings.purchase_date];
             let isoDate = new Date().toISOString().split('T')[0]; // fallback
 
             if (typeof dateVal === 'number') {

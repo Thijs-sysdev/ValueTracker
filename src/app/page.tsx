@@ -78,7 +78,7 @@ export default function Dashboard() {
       } else {
         setError(response.error || "Er is een onbekende fout opgetreden tijdens de analyse.");
       }
-    } catch (err) {
+    } catch {
       setError("Er ging iets mis met het verbinden met de server.");
     } finally {
       setIsLoading(false);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getHistories } from "@/lib/history";
-import { History, FileSpreadsheet, ArrowLeft, ArrowRight, Eye, MousePointerClick } from "lucide-react";
+import { History, FileSpreadsheet, ArrowLeft, ArrowRight } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
