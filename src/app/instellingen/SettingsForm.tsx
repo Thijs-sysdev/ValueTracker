@@ -14,7 +14,6 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
     const [inputValue, setInputValue] = useState(currentDataDir);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isPending, startTransition] = useTransition();
-    const [showTip, setShowTip] = useState(false);
 
     const handleSave = () => {
         startTransition(async () => {
@@ -23,16 +22,6 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
                 setMessage({ type: 'success', text: '✅ Opgeslagen! De nieuwe map is direct actief.' });
             } else {
                 setMessage({ type: 'error', text: `❌ ${result.error}` });
-            }
-        });
-    };
-
-    const handleReset = () => {
-        startTransition(async () => {
-            const result = await resetDataDir();
-            if (result.success) {
-                setInputValue('');
-                setMessage({ type: 'success', text: '✅ Teruggezet naar standaard (./data/).' });
             }
         });
     };
@@ -95,34 +84,6 @@ export default function SettingsForm({ currentDataDir, settingsFile, isDefault }
                     </tbody>
                 </table>
             </div>
-
-            {!isDefault && (
-                <button
-                    onClick={handleReset}
-                    disabled={isPending}
-                    className="btn-danger"
-                >
-                    Terugzetten naar standaard (./data/)
-                </button>
-            )}
-
-            <button
-                onClick={() => setShowTip(v => !v)}
-                className="settings-tip-toggle"
-            >
-                💡 OneDrive instelling (werk-pc) {showTip ? '▲' : '▼'}
-            </button>
-
-            {showTip && (
-                <div className="settings-info-box">
-                    <p>Stel dit pad in op je werk-pc:</p>
-                    <code>C:\Users\ThijsRosmalen\OneDrive - Parttracker BV\Apps\ValueTracker</code>
-                    <p style={{ marginTop: '0.5rem' }}>
-                        Zorg dat je collega&apos;s toegang hebben tot dezelfde OneDrive map.
-                        Iedereen die de app opent wijst naar dezelfde bestanden.
-                    </p>
-                </div>
-            )}
         </div>
     );
 }
