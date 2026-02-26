@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { updateDataDir, resetDataDir } from './actions';
-import Link from 'next/link';
+import { updateDataDir } from './actions';
 
 interface Props {
     currentDataDir: string;
