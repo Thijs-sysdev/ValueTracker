@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UploadCloud, Database, Loader2, AlertCircle, CheckCircle2, RefreshCw, FileText, ChevronDown } from 'lucide-react';
-import { getDatabaseStats, uploadPriceListAction, checkPriceListAction } from './actions';
+import { UploadCloud, Database, Loader2, AlertCircle, CheckCircle2, RefreshCw, FileText, ChevronDown, Edit2, X, Check, FileSpreadsheet } from 'lucide-react';
+import { getDatabaseStats, uploadPriceListAction, checkPriceListAction, openPriceListAction, updateManufacturerAction } from './actions';
 
 // Helper function to normalize brand names for grouping in the filter
 function normalizeBrandName(name: string): string {
@@ -35,6 +35,11 @@ export default function DatabaseBeheer() {
     const [filterBrand, setFilterBrand] = useState<string>('');
     const [filterYear, setFilterYear] = useState<string>('');
     const [searchFile, setSearchFile] = useState<string>('');
+
+    // Inline editing state for brand
+    const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState('');
+    const [isSavingBrand, setIsSavingBrand] = useState(false);
 
     // Upload confirmation dialog state
     const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -166,7 +171,36 @@ export default function DatabaseBeheer() {
         }
     };
 
+    const handleOpenFile = async (fileName: string) => {
+        const result = await openPriceListAction(fileName);
+        if (!result.success) {
+            setMessage({ text: result.error || "Kon bestand niet openen.", type: 'error' });
+        }
+    };
 
+    const handleStartEditBrand = (metaId: string, currentBrand: string) => {
+        setEditingMetaId(metaId);
+        setEditValue(currentBrand);
+    };
+
+    const handleSaveBrand = async (metaId: string) => {
+        if (!editValue.trim()) return;
+        setIsSavingBrand(true);
+        const result = await updateManufacturerAction(metaId, editValue.trim());
+        setIsSavingBrand(false);
+        if (result.success) {
+            setEditingMetaId(null);
+            setMessage({ text: result.message || "Merk bijgewerkt.", type: 'success' });
+            fetchStats(true); // reload stats
+        } else {
+            setMessage({ text: result.error || "Fout bij bijwerken.", type: 'error' });
+        }
+    };
+
+    const handleCancelEditBrand = () => {
+        setEditingMetaId(null);
+        setEditValue('');
+    };
 
     // Derived state for dataset table filters
     const allMetadata = stats?.metadata || [];
@@ -507,16 +541,48 @@ export default function DatabaseBeheer() {
                                             {filteredMetadata.length > 0 ? (
                                                 filteredMetadata.map((meta: any) => (
                                                     <tr key={meta.id} className="hover:bg-white/60 dark:hover:bg-slate-800/50 transition-colors">
-                                                        <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">
-                                                            {normalizeBrandName(meta.manufacturer)}
+                                                        <td className="px-6 py-4">
+                                                            {editingMetaId === meta.id ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editValue}
+                                                                        onChange={(e) => setEditValue(e.target.value)}
+                                                                        className="w-full max-w-[150px] px-2 py-1 text-sm border rounded-md dark:bg-slate-900 dark:border-slate-700"
+                                                                        autoFocus
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') handleSaveBrand(meta.id);
+                                                                            if (e.key === 'Escape') handleCancelEditBrand();
+                                                                        }}
+                                                                        disabled={isSavingBrand}
+                                                                    />
+                                                                    <button onClick={() => handleSaveBrand(meta.id)} disabled={isSavingBrand} className="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 p-1 rounded">
+                                                                        {isSavingBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                                                    </button>
+                                                                    <button onClick={handleCancelEditBrand} disabled={isSavingBrand} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 p-1 rounded">
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 group/edit cursor-pointer" onClick={() => handleStartEditBrand(meta.id, meta.manufacturer)}>
+                                                                    <span className="font-semibold text-slate-900 dark:text-slate-100">{normalizeBrandName(meta.manufacturer)}</span>
+                                                                    <Edit2 className="w-3.5 h-3.5 text-slate-300 group-hover/edit:text-brand-500 transition-colors opacity-0 group-hover/edit:opacity-100" />
+                                                                </div>
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
                                                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                                                                 {meta.year}
                                                             </span>
                                                         </td>
-                                                        <td className="px-6 py-4 font-mono text-xs text-slate-500 truncate max-w-[200px]" title={meta.fileName}>
-                                                            {meta.fileName}
+                                                        <td className="px-6 py-4 font-mono text-xs truncate max-w-[200px]" title={meta.fileName}>
+                                                            <button
+                                                                onClick={() => handleOpenFile(meta.fileName)}
+                                                                className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300 transition-colors text-left"
+                                                            >
+                                                                <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                                                                <span className="truncate">{meta.fileName}</span>
+                                                            </button>
                                                         </td>
                                                         <td className="px-6 py-4 text-right font-medium text-emerald-600 dark:text-emerald-400">
                                                             +{meta.itemCount?.toLocaleString('nl-NL') || 0}
