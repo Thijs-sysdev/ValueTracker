@@ -14,6 +14,10 @@ files:
   - public/**/*
   - package.json
 
+# Tell electron-builder to keep the Next.js standalone server outside the .asar archive
+asarUnpack:
+  - .next/standalone/**/*
+
 # Copy static Next.js assets into the standalone folder structure
 extraFiles:
   - from: .next/static
