@@ -5,9 +5,7 @@ import * as path from 'path';
 import * as xlsx from 'xlsx';
 import { exec } from 'child_process';
 import { getPriceList } from '@/lib/priceList';
-import { getPriceListsDir } from '@/lib/dataPath';
-
-const dbPath = path.join(process.cwd(), 'data', 'price_db.json');
+import { getPriceListsDir, getDataFilePath } from '@/lib/dataPath';
 
 // Helper to clean price strings
 function parseExcelPrice(priceRaw: any): number {
@@ -116,7 +114,7 @@ export async function getDatabaseStats() {
         const topManufacturers = mList.slice(0, 5).join(', ') + (mList.length > 5 ? '...' : '');
 
         // Load metadata
-        const metaPath = path.join(process.cwd(), 'data', 'price_db_meta.json');
+        const metaPath = getDataFilePath('price_db_meta.json');
         let metadata = [];
         if (fs.existsSync(metaPath)) {
             try {
@@ -178,6 +176,7 @@ export async function uploadPriceListAction(formData: FormData) {
         let totalProcessed = 0;
 
         // Load existing db
+        const dbPath = getDataFilePath('price_db.json');
         let currentDb: any = {};
         if (fs.existsSync(dbPath)) {
             currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
@@ -298,7 +297,7 @@ export async function uploadPriceListAction(formData: FormData) {
 
         // 4. Update Metadata Log
         if (totalProcessed > 0) {
-            const metaPath = path.join(dataDir, 'price_db_meta.json');
+            const metaPath = getDataFilePath('price_db_meta.json');
             let metaLog: any[] = [];
             if (fs.existsSync(metaPath)) {
                 metaLog = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
@@ -366,7 +365,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
         if (mMatch && mMatch[0]) defaultManufacturer = mMatch[0].trim();
 
         // Check metadata for existing year + manufacturer combo
-        const metaPath = path.join(process.cwd(), 'data', 'price_db_meta.json');
+        const metaPath = getDataFilePath('price_db_meta.json');
         const existingUploadDates: string[] = [];
 
         const detectedYears = Array.from(new Set(priceCols.map((p: any) => p.year !== null ? p.year : detectedYear)));
@@ -382,6 +381,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
         }
 
         // Load existing DB to count new articles
+        const dbPath = getDataFilePath('price_db.json');
         let currentDb: any = {};
         if (fs.existsSync(dbPath)) {
             currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
@@ -493,7 +493,7 @@ export async function openPriceListAction(fileName: string): Promise<{ success: 
 
 export async function updateManufacturerAction(metaId: string, newManufacturer: string): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-        const metaPath = path.join(process.cwd(), 'data', 'price_db_meta.json');
+        const metaPath = getDataFilePath('price_db_meta.json');
         if (!fs.existsSync(metaPath)) return { success: false, error: "Metadata bestand niet gevonden." };
 
         const metaLog: any[] = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
@@ -513,6 +513,7 @@ export async function updateManufacturerAction(metaId: string, newManufacturer: 
         fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
 
         // 2. Update all corresponding items in price_db.json
+        const dbPath = getDataFilePath('price_db.json');
         if (fs.existsSync(dbPath)) {
             const currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
             let updatedCount = 0;
@@ -548,7 +549,7 @@ export async function searchArticleHistory(query: string): Promise<any | null> {
     if (!trimmed) return null;
 
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'price_db.json');
+        const dbPath = getDataFilePath('price_db.json');
         if (!fs.existsSync(dbPath)) return null;
 
         const dbRaw = fs.readFileSync(dbPath, 'utf-8');
