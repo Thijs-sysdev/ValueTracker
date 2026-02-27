@@ -265,6 +265,17 @@ app.whenReady().then(async () => {
                 });
             }, 5000);
         }
+
+        // BACKGROUND PRE-LOADING:
+        // Silently load the AI model into memory 3 seconds after startup
+        // This makes the first user question instant.
+        setTimeout(() => {
+            const status = llm.getModelStatus();
+            if (status.isDownloaded && !status.isLoaded) {
+                console.log('[main] Pre-loading AI model in the background...');
+                llm.loadModel().catch(err => console.error('[main] Pre-load failed:', err.message));
+            }
+        }, 3000);
     } catch (err) {
         console.error('[main] Fatal error:', err);
         app.quit();

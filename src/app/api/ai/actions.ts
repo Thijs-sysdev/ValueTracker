@@ -44,22 +44,23 @@ export async function getAiContextForQuestion(question: string): Promise<string>
     }
 
     // 3. Format the results into a dense string for the LLM
-    if (results.length === 0) {
+    // Limit to max 5 results to prevent massive prompt evaluations on CPU
+    const limitedResults = results.slice(0, 5);
+    if (limitedResults.length === 0) {
         return '';
     }
 
-    let contextString = 'GEVONDEN ARTIKELEN IN DATABASE:\n\n';
+    // Dense pseudo-CSV format is vastly faster for LLMs to read than verbose sentences
+    let contextString = 'DATABASE CONTEXT (MAX 5 MATCHES):\n';
 
-    for (const item of results) {
-        contextString += `Artikel: ${item.article_number}\n`;
-        contextString += `Fabrikant: ${item.manufacturer || 'Onbekend'}\n`;
+    for (const item of limitedResults) {
+        let prices = '';
         if (item.history && Array.isArray(item.history)) {
-            contextString += `Prijshistorie (Jaar -> Bruto Prijs):\n`;
-            item.history.forEach((h: any) => {
-                contextString += ` - ${h.year}: €${h.price}\n`;
-            });
+            // e.g. "23=100.0, 22=90.0"
+            prices = item.history.map((h: any) => `${String(h.year).slice(-2)}=${h.price}`).join(', ');
         }
-        contextString += '\n';
+
+        contextString += `[SKU: ${item.article_number} | MFR: ${item.manufacturer || 'Unknown'} | PRICES: ${prices}]\n`;
     }
 
     return contextString;

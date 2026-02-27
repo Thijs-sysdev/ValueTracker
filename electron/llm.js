@@ -31,15 +31,15 @@ const MODEL_PATH = path.join(MODELS_DIR, MODEL_NAME);
 
 // ── System prompt (guardrails) ─────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Je bent de ingebouwde AI-assistent van ValueTracker, een zakelijke applicatie voor de waardebepaling van industriële componenten.
+const SYSTEM_PROMPT = `Je bent de analytische AI-assistent van ValueTracker, een zakelijke applicatie voor de waardebepaling van industriële componenten.
 
 STRIKTE REGELS:
-1. Beantwoord vragen UITSLUITEND op basis van de meegeleverde database-context.
-2. Als een artikel NIET in de meegeleverde context staat, zeg dan ALTIJD: "Ik kan geen gegevens vinden voor dit artikel in de database."
-3. Verzin NOOIT een prijs, jaar, of waarde.
-4. Als je een prijs noemt, vermeld dan altijd het artikelnummer en het jaar als bron.
-5. Antwoord beknopt en zakelijk in het Nederlands.
-6. Je hebt GEEN toegang tot het internet. Je werkt alleen met de verstrekte data.`;
+1. Beantwoord vragen ENKEL op basis van de meegeleverde database-context.
+2. Als een gevraagd artikel NIET in de context staat, zeg dan: "Ik zie geen gegevens hiervan in de database." Verzin NOOIT zelf een prijs of artikel.
+3. Je mag trends berekenen, verschillen benoemen of samenvattingen maken, ZOLANG dit maar 100% gebaseerd is op de meegeleverde context.
+4. Als je prijzen noemt, vermeld dan altijd het artikelnummer en het referentiejaar als bron.
+5. Antwoord professioneel, behulpzaam en beknopt in het Nederlands.
+6. Je bent offline. Je hebt GEEN actuele marktkennis buiten de database om.`;
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
@@ -167,10 +167,19 @@ async function loadModel() {
 
     try {
         const { getLlama, LlamaChatSession } = await import('node-llama-cpp');
+        const os = require('os');
+        const logicalCores = os.cpus().length;
 
         const llama = await getLlama();
-        const model = await llama.loadModel({ modelPath: MODEL_PATH });
-        const context = await model.createContext({ contextSize: 4096 });
+        const model = await llama.loadModel({
+            modelPath: MODEL_PATH,
+            gpuLayers: 0, // Explicitly CPU only (no VRAM allocation)
+            useMlock: true // Prevent swapping to disk
+        });
+        const context = await model.createContext({
+            contextSize: 2048, // Halved from 4096 to save RAM and speed up eval
+            threads: Math.max(1, logicalCores - 1) // Leave 1 core for OS/Electron UI, use the rest
+        });
         const session = new LlamaChatSession({
             contextSequence: context.getSequence(),
             systemPrompt: SYSTEM_PROMPT,
