@@ -173,7 +173,7 @@ async function loadModel() {
         const llama = await getLlama();
         const model = await llama.loadModel({
             modelPath: MODEL_PATH,
-            gpuLayers: 0, // Explicitly CPU only (no VRAM allocation)
+            gpuLayers: 'max', // Force offload to GPU (RTX 4070 Ti)
             useMlock: true // Prevent swapping to disk
         });
         const context = await model.createContext({
