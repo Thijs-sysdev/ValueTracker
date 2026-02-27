@@ -1,6 +1,8 @@
 'use server';
 
 import { searchArticleHistory } from '@/app/prijslijsten-beheer/actions';
+import { getDataFilePath } from '@/lib/dataPath';
+import * as fs from 'fs';
 
 /**
  * Parses a natural language question, extracts potential article numbers,
@@ -10,42 +12,68 @@ import { searchArticleHistory } from '@/app/prijslijsten-beheer/actions';
 export async function getAiContextForQuestion(question: string): Promise<{ contextString: string, matchedCodes: string[] }> {
     if (!question || typeof question !== 'string') return { contextString: '', matchedCodes: [] };
 
-    // 1. Extract potential article numbers from the query.
-    // Example: "Wat kost de 6ES7215-1AG40-0XB0 in 2023?"
-    // We look for alphanumeric strings of at least 5 characters.
-    const words = question.replace(/[?,.!]/g, ' ').split(/\s+/);
-    const potentialCodes = words.filter(w => w.length >= 5 && /[a-zA-Z]/.test(w) && /[0-9]/.test(w));
+    const stopWords = ['de', 'het', 'een', 'van', 'voor', 'wat', 'hoe', 'prijs', 'prijzen', 'serie', 'is', 'zijn', 'kosten', 'kost'];
+    const words = question.replace(/[?,.!]/g, ' ').split(/\s+/).filter(w => w.length > 1 && !stopWords.includes(w.toLowerCase()));
 
-    // Also include any word that is purely uppercase or purely numbers if it's long enough
-    const extraCodes = words.filter(w => w.length >= 5 && (/^[A-Z0-9-]+$/.test(w)) && !potentialCodes.includes(w));
-
+    // 1. Extract potential EXACT article numbers (e.g. 6ES7...)
+    const potentialCodes = words.filter(w => w.length >= 4 && /[a-zA-Z]/.test(w) && /[0-9]/.test(w));
+    const extraCodes = words.filter(w => w.length >= 4 && (/^[A-Z0-9-]+$/.test(w)) && !potentialCodes.includes(w));
     const codesToSearch = [...potentialCodes, ...extraCodes];
 
-    // If no strong candidates found, let's just use the longest words as a fallback
-    if (codesToSearch.length === 0) {
-        const longWords = words.filter(w => w.length >= 5);
-        codesToSearch.push(...longWords.slice(0, 3));
-    }
-
-    if (codesToSearch.length === 0) return { contextString: '', matchedCodes: [] };
-
-    const results: any[] = [];
+    let results: any[] = [];
     const seen = new Set<string>();
 
-    // 2. Search the database for each potential code.
+    // 2. Try strict codes first using the existing search
     for (const code of codesToSearch) {
         if (seen.has(code.toLowerCase())) continue;
         seen.add(code.toLowerCase());
 
         const match = await searchArticleHistory(code);
-        if (match) {
-            results.push(match);
+        if (match) results.push(match);
+    }
+
+    // 3. BROAD SWEEP (Agentic Search fallback)
+    // If no exact matches are found, we broaden the search across the entire DB 
+    // to find trends or categories (e.g. "S7")
+    if (results.length === 0 && words.length > 0) {
+        try {
+            const dbPath = getDataFilePath('price_db.json');
+            if (fs.existsSync(dbPath)) {
+                const db = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+
+                // Score items based on how many keywords match their article_number or manufacturer
+                const scoredItems: { item: any, score: number }[] = [];
+
+                for (const key of Object.keys(db)) {
+                    const item = db[key];
+                    let score = 0;
+                    const searchableString = `${item.article_number} ${item.manufacturer}`.toLowerCase();
+
+                    for (const word of words) {
+                        if (searchableString.includes(word.toLowerCase())) {
+                            score += word.length; // Longer words yield higher score weight
+                        }
+                    }
+
+                    if (score > 0) {
+                        scoredItems.push({ item, score });
+                    }
+                }
+
+                if (scoredItems.length > 0) {
+                    scoredItems.sort((a, b) => b.score - a.score);
+                    // Extract Top 15 items for broad trend analysis
+                    results = scoredItems.slice(0, 15).map(si => si.item);
+                }
+            }
+        } catch (e) {
+            console.error("Broad search failed:", e);
         }
     }
 
-    // 3. Format the results into a dense string for the LLM
-    // Limit to max 5 results to prevent massive prompt evaluations on CPU
-    const limitedResults = results.slice(0, 5);
+    // 4. Format the results into a dense string for the LLM
+    // Increased limit to 15 now that GPU offloading is active, for better trend analysis
+    const limitedResults = results.slice(0, 15);
     const matchedCodes = limitedResults.map(r => r.article_number);
 
     if (limitedResults.length === 0) {
@@ -53,7 +81,7 @@ export async function getAiContextForQuestion(question: string): Promise<{ conte
     }
 
     // Dense pseudo-CSV format is vastly faster for LLMs to read than verbose sentences
-    let contextString = 'DATABASE CONTEXT (MAX 5 MATCHES):\n';
+    let contextString = 'DATABASE CONTEXT (MAX 15 MATCHES):\n';
 
     for (const item of limitedResults) {
         let prices = '';
