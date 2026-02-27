@@ -212,6 +212,9 @@ async function ask(question, context, onToken) {
     // This avoids "No sequences left" by not allocating multiple sequences
     const session = instance.session;
     session.setChatHistory([]);
+    if (session.sequence && typeof session.sequence.clearHistory === 'function') {
+        session.sequence.clearHistory();
+    }
 
     // Build the prompt with the database context injected
     const prompt = context
