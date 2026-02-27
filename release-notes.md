@@ -1,3 +1,18 @@
+# ValueTracker V1.2.1 - Bugfix: Auto-updater
+
+**Releasedatum:** 27 februari 2026
+
+## Opgeloste problemen
+
+### 🐛 Auto-updater: "Sluit ValueTracker af" foutmelding
+Bij het klikken op **"Nu herstarten & installeren"** meldde de NSIS-installer ten onrechte dat ValueTracker nog actief was, waardoor de installatie halverwege blokkeerde — terwijl de app al via de UI was afgesloten.
+
+**Oorzaak:** `quitAndInstall()` lanceerde de installer terwijl het Electron-proces nog bezig was met afsluiten. Windows had de process-handle nog niet vrijgegeven op het moment dat NSIS zijn actieve-processen-controle uitvoerde.
+
+**Oplossing:** Alle vensters worden nu expliciet gesloten vóór `quitAndInstall()` wordt aangeroepen, met een korte wachttijd (500 ms) zodat het OS het process volledig kan beëindigen voordat de installer start.
+
+---
+
 # ValueTracker V1.2.0 - AI & Performance Update
 
 Gefeliciteerd! ValueTracker is geüpgraded naar **V1.2.0**. Deze versie brengt significante verbeteringen aan de AI-assistent, hardware-optimalisaties en UI-verfijningen.
