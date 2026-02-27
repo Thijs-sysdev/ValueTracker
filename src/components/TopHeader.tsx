@@ -36,6 +36,7 @@ export default function TopHeader() {
     const [aiResponse, setAiResponse] = useState('');
     const [aiError, setAiError] = useState('');
     const [isAiAvailable, setIsAiAvailable] = useState(false);
+    const [matchedCodes, setMatchedCodes] = useState<string[]>([]);
 
     const abortController = useRef<AbortController | null>(null);
 
@@ -81,7 +82,8 @@ export default function TopHeader() {
 
         try {
             // 1. Fetch Context via Server Action
-            const context = await getAiContextForQuestion(cleanQuery);
+            const { contextString: context, matchedCodes: extractedCodes } = await getAiContextForQuestion(cleanQuery);
+            setMatchedCodes(extractedCodes);
 
             setAiStatus('thinking');
 
@@ -246,7 +248,8 @@ export default function TopHeader() {
                                 <button
                                     onClick={() => {
                                         closeOverlay();
-                                        router.push(`/database?search=${encodeURIComponent(query.replace(/^ai:\s*/i, ''))}`);
+                                        const searchQuery = matchedCodes.length > 0 ? matchedCodes[0] : query.replace(/^ai:\s*/i, '');
+                                        router.push(`/database?search=${encodeURIComponent(searchQuery)}`);
                                     }}
                                     className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors text-sm font-medium border border-slate-700 hover:border-slate-600"
                                 >

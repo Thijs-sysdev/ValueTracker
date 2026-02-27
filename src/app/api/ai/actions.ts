@@ -7,8 +7,8 @@ import { searchArticleHistory } from '@/app/prijslijsten-beheer/actions';
  * searches the database for them, and returns a formatted context string
  * for the LLM.
  */
-export async function getAiContextForQuestion(question: string): Promise<string> {
-    if (!question || typeof question !== 'string') return '';
+export async function getAiContextForQuestion(question: string): Promise<{ contextString: string, matchedCodes: string[] }> {
+    if (!question || typeof question !== 'string') return { contextString: '', matchedCodes: [] };
 
     // 1. Extract potential article numbers from the query.
     // Example: "Wat kost de 6ES7215-1AG40-0XB0 in 2023?"
@@ -27,7 +27,7 @@ export async function getAiContextForQuestion(question: string): Promise<string>
         codesToSearch.push(...longWords.slice(0, 3));
     }
 
-    if (codesToSearch.length === 0) return '';
+    if (codesToSearch.length === 0) return { contextString: '', matchedCodes: [] };
 
     const results: any[] = [];
     const seen = new Set<string>();
@@ -46,8 +46,10 @@ export async function getAiContextForQuestion(question: string): Promise<string>
     // 3. Format the results into a dense string for the LLM
     // Limit to max 5 results to prevent massive prompt evaluations on CPU
     const limitedResults = results.slice(0, 5);
+    const matchedCodes = limitedResults.map(r => r.article_number);
+
     if (limitedResults.length === 0) {
-        return '';
+        return { contextString: '', matchedCodes: [] };
     }
 
     // Dense pseudo-CSV format is vastly faster for LLMs to read than verbose sentences
@@ -63,5 +65,5 @@ export async function getAiContextForQuestion(question: string): Promise<string>
         contextString += `[Artikel: ${item.article_number} | Prijzen: ${prices}]\n`;
     }
 
-    return contextString;
+    return { contextString, matchedCodes };
 }
