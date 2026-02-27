@@ -51,20 +51,11 @@ export default function DatabaseBeheer() {
         fetchStats();
     }, []);
 
-    const fetchStats = async (forceRefresh = false) => {
+    const fetchStats = async () => {
         setIsStatsLoading(true);
-        if (!forceRefresh) {
-            const cachedStats = sessionStorage.getItem('db_stats');
-            if (cachedStats) {
-                setStats(JSON.parse(cachedStats));
-                setIsStatsLoading(false);
-                return;
-            }
-        }
         const res = await getDatabaseStats();
         if (res.success) {
             setStats(res);
-            sessionStorage.setItem('db_stats', JSON.stringify(res));
         }
         setIsStatsLoading(false);
     };
@@ -157,7 +148,7 @@ export default function DatabaseBeheer() {
             const response = await uploadPriceListAction(formData);
             if (response.success) {
                 setMessage({ text: response.message || "Succes!", type: 'success' });
-                await fetchStats(true);
+                await fetchStats();
             } else {
                 setMessage({ text: response.error || "Fout bij verwerken lijst.", type: 'error' });
             }
@@ -191,7 +182,7 @@ export default function DatabaseBeheer() {
         if (result.success) {
             setEditingMetaId(null);
             setMessage({ text: result.message || "Merk bijgewerkt.", type: 'success' });
-            fetchStats(true); // reload stats
+            fetchStats(); // reload stats
         } else {
             setMessage({ text: result.error || "Fout bij bijwerken.", type: 'error' });
         }
@@ -408,7 +399,7 @@ export default function DatabaseBeheer() {
                 <div className="space-y-6">
                     <h3 className="text-xl font-bold flex items-center justify-between">
                         Database Status
-                        <button onClick={() => fetchStats(true)} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <button onClick={() => fetchStats()} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                             <RefreshCw size={18} className={isStatsLoading ? 'animate-spin' : ''} />
                         </button>
                     </h3>

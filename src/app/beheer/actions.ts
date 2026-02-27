@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as xlsx from 'xlsx';
 import { exec } from 'child_process';
-import { getPriceList } from '@/lib/priceList';
+import { getPriceList, clearPriceListCache } from '@/lib/priceList';
 import { getPriceListsDir, getDataFilePath } from '@/lib/dataPath';
 
 // Helper to clean price strings
@@ -98,6 +98,8 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
 
 export async function getDatabaseStats() {
     try {
+        // Always clear the in-memory cache so we read fresh data from disk
+        clearPriceListCache();
         const db = getPriceList();
 
         const uniqueItems = new Set<string>();
