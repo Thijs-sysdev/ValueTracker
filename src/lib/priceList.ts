@@ -58,7 +58,8 @@ export function lookupPrice(articleNumber: string, targetYear: number): PriceRef
             manufacturer: record.manufacturer,
             article_number: record.article_number,
             gross_price: exactMatch.price,
-            year: targetYear
+            year: targetYear,
+            phased_out_year: record.phased_out_year
         };
     }
 
@@ -87,7 +88,8 @@ export function lookupPrice(articleNumber: string, targetYear: number): PriceRef
             gross_price: Math.round(estimatedPrice * 100) / 100, // round to 2 decimals
             year: targetYear,
             is_interpolated: true,
-            price_note: `✅ Geïnterpoleerd tussen ${before.year} (€${before.price}) en ${after.year} (€${after.price})`
+            price_note: `✅ Geïnterpoleerd tussen ${before.year} (€${before.price}) en ${after.year} (€${after.price})`,
+            phased_out_year: record.phased_out_year
         };
     } else {
         // Fallback to closest available
@@ -98,7 +100,8 @@ export function lookupPrice(articleNumber: string, targetYear: number): PriceRef
             gross_price: closestFallback.price,
             year: targetYear,
             is_fallback: true,
-            price_note: `⚠️ Geen data voor ${targetYear}. Historische prijs uit ${closestFallback.year} gebruikt (€${closestFallback.price}).`
+            price_note: `⚠️ Geen data voor ${targetYear}. Historische prijs uit ${closestFallback.year} gebruikt (€${closestFallback.price}).`,
+            phased_out_year: record.phased_out_year
         };
     }
 }

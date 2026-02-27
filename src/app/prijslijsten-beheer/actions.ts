@@ -30,6 +30,7 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
     artIdx: number;
     priceCols: { idx: number, year: number | null }[];
     priceUnitIdx: number;
+    phasedOutIdx: number;
 } | null {
     const articleWords = ['artikel', 'art', 'code', 'type', 'typ', 'bestel', 'reference', 'product', 'id nummer', 'mlfb'];
     const articleBlacklist = ['gewicht', 'afmeting', 'packing', 'verpakking', 'succesor', 'successor', 'ean', 'upc', 'groep'];
@@ -43,6 +44,7 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
 
     // FIX 3: Detect "price unit" column (often used by Weidmuller for "List Price per 100")
     const priceUnitWords = ['price unit', 'prijs per', 'prijseenheid', 'per eenheid', 'aantal per prijs'];
+    const phasedOutWords = ['uitgefaseerd', 'obsolete', 'uitloop', 'vervallen', 'status', 'phased out'];
 
     // FIX 2: Scan ALL sheets, not just the first one
     for (const sheetName of workbook.SheetNames) {
@@ -57,6 +59,7 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
             let possibleArtIdx = -1;
             const possiblePriceCols: { idx: number, year: number | null }[] = [];
             let possiblePriceUnitIdx = -1;
+            let possiblePhasedOutIdx = -1;
 
             for (let c = 0; c < strCols.length; c++) {
                 const colHeader = strCols[c];
@@ -79,6 +82,9 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
                 if (possiblePriceUnitIdx === -1 && priceUnitWords.some(w => colHeader.includes(w))) {
                     possiblePriceUnitIdx = c;
                 }
+                if (possiblePhasedOutIdx === -1 && phasedOutWords.some(w => colHeader.includes(w))) {
+                    possiblePhasedOutIdx = c;
+                }
             }
 
             if (possibleArtIdx !== -1 && possiblePriceCols.length > 0 && !possiblePriceCols.some(pc => pc.idx === possibleArtIdx)) {
@@ -87,7 +93,8 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
                     headerRowIdx: i,
                     artIdx: possibleArtIdx,
                     priceCols: possiblePriceCols,
-                    priceUnitIdx: possiblePriceUnitIdx
+                    priceUnitIdx: possiblePriceUnitIdx,
+                    phasedOutIdx: possiblePhasedOutIdx
                 };
             }
         }
@@ -170,7 +177,7 @@ export async function uploadPriceListAction(formData: FormData) {
             return { success: false, error: "Kon de kolommen voor 'Artikelnummer' en 'Brutoprijs' niet automatisch detecteren in de eerste 30 rijen van de tabbladen." };
         }
 
-        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx } = detected;
+        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx } = detected;
 
         // 2. Extract Data
         let newItemsCount = 0;
@@ -194,6 +201,8 @@ export async function uploadPriceListAction(formData: FormData) {
         const mMatch = file.name.replace(/(20\d{2})/, '').match(/([a-zA-Z\s]+)(?=[\/\\][^\/\\]+\.xlsx?$)|([a-zA-Z\s]+)(?=\s|$|\.|_|-)/);
         if (mMatch && mMatch[0]) defaultManufacturer = mMatch[0].trim();
 
+        const phasedOutTrueValues = ['ja', 'yes', 'true', '1', 'x', 'v', 'uitloop', 'vervallen', 'obsolete', 'uitgefaseerd', 'phased out'];
+
         // Check if there is a Fabrikant column explicitly
         const headers = data[headerRowIdx].map((h: any) => (h?.toString() || "").toLowerCase());
         const manufacturerIdx = headers.findIndex((h: string) => h.includes('fabrikant') || h.includes('merk') || h.includes('manufacturer'));
@@ -207,6 +216,17 @@ export async function uploadPriceListAction(formData: FormData) {
 
             const artCode = artCodeRaw.toString().trim();
             if (!artCode) continue;
+
+            let isPhasedOut = false;
+            if (phasedOutIdx !== -1) {
+                const poVal = row[phasedOutIdx];
+                if (poVal) {
+                    const poStr = poVal.toString().trim().toLowerCase();
+                    if (phasedOutTrueValues.includes(poStr)) {
+                        isPhasedOut = true;
+                    }
+                }
+            }
 
             // Adjust base price if a per-unit divisor column is present and valid
             let unitDivisor = 1;
@@ -248,6 +268,7 @@ export async function uploadPriceListAction(formData: FormData) {
                             article_number: artCode,
                             history: [{ year: priceYearToUse, price: parsedPrice }]
                         };
+                        if (isPhasedOut) currentDb[key].phased_out_year = detectedYear;
                     } else {
                         const item = currentDb[key];
                         // If it's a legacy record without history, migrate it
@@ -256,6 +277,8 @@ export async function uploadPriceListAction(formData: FormData) {
                             delete item.gross_price;
                             delete item.year;
                         }
+
+                        if (isPhasedOut) item.phased_out_year = detectedYear;
 
                         const existingYear = item.history.find((h: any) => h.year === priceYearToUse);
                         if (existingYear) {
@@ -355,7 +378,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
             return { success: false, error: "Kon de kolommen voor 'Artikelnummer' en 'Brutoprijs' niet automatisch detecteren." };
         }
 
-        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx } = detected;
+        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx } = detected;
 
         // Detect year & manufacturer from filename
         let detectedYear = new Date().getFullYear();

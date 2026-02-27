@@ -17,6 +17,7 @@ export interface DBPriceRecord {
     manufacturer: string;
     article_number: string;
     history: HistoricalPrice[];
+    phased_out_year?: number;
 }
 
 export interface PriceReference {
@@ -27,6 +28,7 @@ export interface PriceReference {
     is_interpolated?: boolean;
     is_fallback?: boolean;
     price_note?: string;
+    phased_out_year?: number;
 }
 
 export interface ValuationOutput {
@@ -42,6 +44,7 @@ export interface ValuationOutput {
     status: 'ACCEPTED' | 'AFWIJZEN';
     price_note?: string;
     error?: string;
+    is_phased_out?: boolean;
 }
 
 export interface ValuationConfig {

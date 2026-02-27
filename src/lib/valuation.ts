@@ -1,14 +1,25 @@
 import { ValuationInput, PriceReference, ValuationOutput, ValuationConfig } from './types';
 
-function calculateAgeInYears(purchaseDateStr: string): number {
+function calculateAgeInYears(purchaseDateStr: string, phasedOutYear?: number): number {
     const purchaseDate = new Date(purchaseDateStr);
-    const currentDate = new Date();
+    let currentDate = new Date();
 
     if (isNaN(purchaseDate.getTime())) {
         return 0; // Default if invalid date
     }
 
-    const diffTime = Math.abs(currentDate.getTime() - purchaseDate.getTime());
+    if (phasedOutYear) {
+        const phasedOutDate = new Date(`${phasedOutYear}-12-31T23:59:59`);
+        if (currentDate > phasedOutDate) {
+            currentDate = phasedOutDate;
+        }
+    }
+
+    if (currentDate < purchaseDate) {
+        return 0;
+    }
+
+    const diffTime = currentDate.getTime() - purchaseDate.getTime();
     const diffYears = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 365.25));
     return Math.min(diffYears, 5); // Max age capped at 5 according to Excel formula logic
 }
@@ -81,7 +92,7 @@ export function calculateValuation(
     }
 
     const startPrice = priceRef.gross_price;
-    const age = calculateAgeInYears(input.purchase_date);
+    const age = calculateAgeInYears(input.purchase_date, priceRef.phased_out_year);
 
     // Depreciation Calculation
     const valueAfterYear1 = startPrice * (1 - config.depreciationYear1);
@@ -114,6 +125,12 @@ export function calculateValuation(
 
     const sku = `${input.article_number}-${conditionPrefix}`;
 
+    let priceNote = priceRef.price_note;
+    if (priceRef.phased_out_year) {
+        const phaseOutNote = `⚠️ Artikel is uitgefaseerd in ${priceRef.phased_out_year}. Afschrijving stopt in dit jaar.`;
+        priceNote = priceNote ? `${priceNote}\n${phaseOutNote}` : phaseOutNote;
+    }
+
     return {
         id,
         article_number: input.article_number,
@@ -125,6 +142,7 @@ export function calculateValuation(
         purchase_value_consignment: purchaseValueConsignment,
         purchase_value_external: purchaseValueExternal,
         status: 'ACCEPTED',
-        price_note: priceRef.price_note
+        price_note: priceNote,
+        is_phased_out: !!priceRef.phased_out_year
     };
 }
