@@ -15,6 +15,15 @@
   ; ── Create the models directory ──────────────────────────────────────────────
   CreateDirectory "$APPDATA\valuetracker\models"
 
+  ; ── Set the download destination ────────────────────────────────────────────
+  StrCpy $0 "$APPDATA\valuetracker\models\qwen2.5-3b-instruct-q4_k_m.gguf"
+
+  ; ── Check if the model already exists ───────────────────────────────────────
+  IfFileExists "$0" skip_ai_download 0
+
+  ; ── Check if this is a silent install (background update) ───────────────────
+  IfSilent skip_ai_download 0
+
   ; ── Ask the user if they want to download the AI model ───────────────────────
   MessageBox MB_YESNO|MB_ICONQUESTION \
     "Wilt u de AI-assistent installeren?$\r$\n$\r$\nDe AI-assistent stelt u in staat om vragen te stellen \
@@ -22,10 +31,7 @@ over prijsinformatie in de zoekbalk van ValueTracker.$\r$\n$\r$\n\
 Vereist: ~1.8 GB vrije schijfruimte en een eenmalige internetverbinding.$\r$\n\
 Daarna werkt de AI-assistent volledig offline.$\r$\n$\r$\n\
 Kies 'Ja' om de AI nu te installeren, of 'Nee' om dit over te slaan." \
-    IDNO skip_ai_download
-
-  ; ── Set the download destination ────────────────────────────────────────────
-  StrCpy $0 "$APPDATA\valuetracker\models\qwen2.5-3b-instruct-q4_k_m.gguf"
+    /SD IDNO IDNO skip_ai_download
 
   ; ── Show status in the detail view ──────────────────────────────────────────
   DetailPrint "AI-model downloaden (Qwen2.5-3B, ~1.8 GB)..."

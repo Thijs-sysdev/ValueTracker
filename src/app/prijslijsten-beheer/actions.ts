@@ -32,10 +32,10 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
     priceUnitIdx: number;
     phasedOutIdx: number;
 } | null {
-    const articleWords = ['artikel', 'art', 'code', 'type', 'typ', 'bestel', 'reference', 'product', 'id nummer', 'mlfb'];
+    const articleWords = ['artikel', 'art', 'code', 'type', 'typ', 'bestel', 'reference', 'product', 'id nummer', 'mlfb', 'part no', 'part_no', 'partnumber', 'part number', 'sku', 'item code', 'item no', 'bestelnummer', 'bestel nr', 'materiaal', 'material'];
     const articleBlacklist = ['gewicht', 'afmeting', 'packing', 'verpakking', 'succesor', 'successor', 'ean', 'upc', 'groep'];
 
-    const priceWords = ['bruto', 'prijs', 'price', 'catalogusprijs', 'list price', 'listprice'];
+    const priceWords = ['bruto', 'prijs', 'price', 'catalogusprijs', 'list price', 'listprice', 'msrp', 'list_price', 'brutoprijs', 'bruto prijs', 'retail price', 'base price', 'standard price'];
     // FIX 1: Blacklist '/100' so we don't accidentally pick the "Prijs/100" column if a "Prijs /stuk" column is also available
     const priceBlacklist = [
         'korting', 'netto', 'update', 'verhoging', 'eenheid', 'groep', 'datum', 'qty', 'quantity', 'scale',
@@ -44,7 +44,8 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
 
     // FIX 3: Detect "price unit" column (often used by Weidmuller for "List Price per 100")
     const priceUnitWords = ['price unit', 'prijs per', 'prijseenheid', 'per eenheid', 'aantal per prijs'];
-    const phasedOutWords = ['uitgefaseerd', 'obsolete', 'uitloop', 'vervallen', 'status', 'phased out'];
+    const phasedOutWords = ['uitgefaseerd', 'obsolete', 'uitloop', 'vervallen', 'status', 'phased out', 'lifecycle status', 'life cycle', 'eol', 'end of life', 'uitloopartikel', 'uitfaseer'];
+
 
     // FIX 2: Scan ALL sheets, not just the first one
     for (const sheetName of workbook.SheetNames) {
