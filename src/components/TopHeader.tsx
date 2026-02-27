@@ -1,7 +1,6 @@
 'use client';
 
 import { Search, Bell, Sparkles, X, ChevronRight, Loader2, Database } from 'lucide-react';
-import os from 'os';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAiContextForQuestion } from '@/app/api/ai/actions';
@@ -26,9 +25,9 @@ function classifyIntent(query: string): 'search' | 'ai' {
 }
 
 export default function TopHeader() {
-    const username = os.userInfo().username || 'Verkoper';
     const router = useRouter();
 
+    const [username, setUsername] = useState('Verkoper');
     const [query, setQuery] = useState('');
     const [showOverlay, setShowOverlay] = useState(false);
 
@@ -41,7 +40,15 @@ export default function TopHeader() {
     const abortController = useRef<AbortController | null>(null);
 
     useEffect(() => {
-        const api = (window as any).electronAPI?.ai;
+        // Fetch username from Electron
+        const baseApi = (window as any).electronAPI;
+        if (baseApi?.getUsername) {
+            baseApi.getUsername().then((name: string) => {
+                if (name) setUsername(name);
+            });
+        }
+
+        const api = baseApi?.ai;
         if (api) {
             api.getModelStatus().then((s: any) => {
                 if (s.isLoaded || s.isDownloaded) setIsAiAvailable(true);
@@ -153,8 +160,8 @@ export default function TopHeader() {
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Zoeken (gebruik 'Wat kost...' voor AI)"
                                 className={`w-full bg-slate-900/50 text-white placeholder-slate-500 rounded-2xl py-3.5 pl-12 pr-4 border transition-all shadow-inner shadow-black/20 focus:outline-none focus:ring-2 ${query && classifyIntent(query) === 'ai'
-                                        ? 'border-brand-500/50 focus:ring-brand-500/50 bg-brand-900/10'
-                                        : 'border-slate-800/50 focus:ring-brand-500/50'
+                                    ? 'border-brand-500/50 focus:ring-brand-500/50 bg-brand-900/10'
+                                    : 'border-slate-800/50 focus:ring-brand-500/50'
                                     }`}
                                 suppressHydrationWarning
                             />
