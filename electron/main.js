@@ -12,6 +12,7 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const http = require('http');
 const os = require('os');
+const llm = require('./llm');
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const PORT = 3000;
@@ -169,6 +170,58 @@ Menu.setApplicationMenu(null);
 // Returns the real Windows login name of the current user at runtime.
 ipcMain.handle('get-username', () => {
     return os.userInfo().username;
+});
+
+// ── AI / LLM IPC Handlers ─────────────────────────────────────────────────────
+
+// Query: is the model downloaded and/or loaded?
+ipcMain.handle('ai:model-status', () => {
+    return llm.getModelStatus();
+});
+
+// Trigger: download the model file (first-run setup)
+// Progress events are streamed back as 'ai:download-progress' on the sender window.
+ipcMain.on('ai:download-model', (event) => {
+    llm.downloadModel(
+        (progress) => {
+            // Stream progress to the renderer that triggered the download
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('ai:download-progress', progress);
+            }
+        },
+        () => {
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('ai:download-done');
+            }
+        },
+        (err) => {
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('ai:download-error', { message: err.message });
+            }
+        }
+    );
+});
+
+// Query: ask the AI a question with RAG context
+// Tokens are streamed back as 'ai:token' events; 'ai:done' signals completion.
+ipcMain.on('ai:ask', (event, { question, context, requestId }) => {
+    llm.ask(
+        question,
+        context,
+        (token) => {
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('ai:token', { token, requestId });
+            }
+        }
+    ).then((fullAnswer) => {
+        if (!event.sender.isDestroyed()) {
+            event.sender.send('ai:done', { fullAnswer, requestId });
+        }
+    }).catch((err) => {
+        if (!event.sender.isDestroyed()) {
+            event.sender.send('ai:error', { message: err.message, requestId });
+        }
+    });
 });
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────

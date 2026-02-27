@@ -45,4 +45,31 @@ contextBridge.exposeInMainWorld('electronUpdater', {
 contextBridge.exposeInMainWorld('electronAPI', {
     // Get the Windows username of the currently logged-in user
     getUsername: () => ipcRenderer.invoke('get-username'),
+
+    // ── AI / LLM ──────────────────────────────────────────────────────────────
+    ai: {
+        /** Returns { isDownloaded, isLoaded, isLoading, isDownloading } */
+        getModelStatus: () => ipcRenderer.invoke('ai:model-status'),
+
+        /** Trigger the one-time model download */
+        downloadModel: () => ipcRenderer.send('ai:download-model'),
+
+        /** Ask the AI a question with optional RAG context (JSON string) */
+        ask: (question, context, requestId) =>
+            ipcRenderer.send('ai:ask', { question, context, requestId }),
+
+        /** Event listeners for streaming responses */
+        onDownloadProgress: (cb) => ipcRenderer.on('ai:download-progress', (_e, data) => cb(data)),
+        onDownloadDone: (cb) => ipcRenderer.on('ai:download-done', () => cb()),
+        onDownloadError: (cb) => ipcRenderer.on('ai:download-error', (_e, err) => cb(err)),
+        onToken: (cb) => ipcRenderer.on('ai:token', (_e, data) => cb(data)),
+        onDone: (cb) => ipcRenderer.on('ai:done', (_e, data) => cb(data)),
+        onError: (cb) => ipcRenderer.on('ai:error', (_e, err) => cb(err)),
+
+        /** Remove all AI listeners (call on component unmount) */
+        removeAllListeners: () => {
+            ['ai:download-progress', 'ai:download-done', 'ai:download-error',
+                'ai:token', 'ai:done', 'ai:error'].forEach(ch => ipcRenderer.removeAllListeners(ch));
+        },
+    },
 });

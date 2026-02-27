@@ -17,6 +17,8 @@ files:
 # Tell electron-builder to keep the Next.js standalone server outside the .asar archive
 asarUnpack:
   - .next/standalone/**/*
+  - node_modules/node-llama-cpp/**/*
+  - node_modules/@node-llama-cpp/**/*
 
 # Static assets (.next/static, public) are pre-copied into the standalone
 # folder by the CI workflow before electron-builder runs, so they are
