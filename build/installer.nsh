@@ -2,27 +2,39 @@
 ; ValueTracker — Custom NSIS Installer Script
 ; build/installer.nsh
 ;
-; customInit    → runs inside .onInit (very first thing the installer does),
-;                 BEFORE the built-in "app is running" process check.
-;                 Kills any running ValueTracker instance so that check never
-;                 triggers the "please close the app" dialog.
+; customCheckAppRunning → REPLACES electron-builder's entire _CHECK_APP_RUNNING
+;               logic. Kills ValueTracker silently using the full $SYSDIR path,
+;               waits 2 seconds, then continues without any dialog. This is the
+;               official electron-builder escape-hatch (see allowOnlyOneInstallerInstance.nsh).
 ;
-; customInstall → runs after files are extracted. Adds the optional AI-model
-;                 download step.
+; customInit    → Early kill in .onInit (belt-and-suspenders), before the
+;               installer pages even show.
+;
+; customInstall → Runs after files are extracted. Adds the optional AI-model
+;               download step.
 ; =============================================================================
 
-; ── Kill running ValueTracker BEFORE NSIS checks for active processes ─────────
-!macro customInit
-  ; Silently terminate any running ValueTracker.exe.
-  ; /F = force-kill  |  /IM = match by image name  |  /T = include child tree
-  ; nsExec::ExecToStack captures output so nothing is shown to the user.
-  ; Exit code 0 = killed successfully, 128 = process not found — both are fine.
-  nsExec::ExecToStack 'taskkill /F /IM "ValueTracker.exe" /T'
-  Pop $0  ; exit code — discard
-  Pop $1  ; stdout/stderr  — discard
+; ── Replace electron-builder's process-check entirely ────────────────────────
+; When customCheckAppRunning is defined, electron-builder's CHECK_APP_RUNNING
+; macro uses IT instead of _CHECK_APP_RUNNING, so no "appCannotBeClosed" dialog
+; can ever fire.
+!macro customCheckAppRunning
+  ; Kill any running ValueTracker instance silently.
+  ; $SYSDIR = C:\Windows\System32 — guaranteed to be set at this point.
+  ; /F = force  |  /IM = by image name  |  /T = include child processes
+  ; nsExec::Exec runs without a visible window. Exit code is ignored.
+  nsExec::Exec '"$SYSDIR\taskkill.exe" /F /IM "ValueTracker.exe" /T'
+  Pop $0  ; discard return code
 
-  ; Give Windows 1 second to fully release all file and process handles
-  ; before NSIS continues with its running-process detection.
+  ; Wait 2 s for Windows to fully release file handles before NSIS
+  ; proceeds to uninstall old files and extract new ones.
+  Sleep 2000
+!macroend
+
+; ── Belt-and-suspenders: also kill early in .onInit ──────────────────────────
+!macro customInit
+  nsExec::Exec '"$SYSDIR\taskkill.exe" /F /IM "ValueTracker.exe" /T'
+  Pop $0
   Sleep 1000
 !macroend
 
@@ -53,9 +65,6 @@ Kies 'Ja' om de AI nu te installeren, of 'Nee' om dit over te slaan." \
   DetailPrint "Dit kan enkele minuten duren afhankelijk van uw internetverbinding."
 
   ; ── Download with progress bar ───────────────────────────────────────────────
-  ; inetc::get is included in electron-builder's bundled NSIS binaries.
-  ; /CAPTION sets the title of the download popup.
-  ; /POPUP shows a small download progress dialog (native Windows look).
   inetc::get \
     /CAPTION "ValueTracker — AI-Assistent Installeren" \
     /POPUP "Qwen2.5 AI-model downloaden..." \
@@ -83,8 +92,6 @@ ValueTracker start automatisch met AI-ondersteuning."
 
 !macro customUnInstall
   ; ── Optionally remove the AI model on uninstall ──────────────────────────────
-  ; We do NOT auto-delete — the model is large and the user may reinstall.
-  ; The model lives in AppData (not Program Files) so Windows won't auto-clean it.
   MessageBox MB_YESNO|MB_ICONQUESTION \
     "Wilt u ook het AI-model verwijderen?$\r$\n$\r$\n\
 Het AI-model (~1.8 GB) bevindt zich in:$\r$\n\

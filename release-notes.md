@@ -1,3 +1,18 @@
+# ValueTracker V1.2.3 - Bugfix: Auto-updater (definitieve installer-fix)
+
+**Releasedatum:** 27 februari 2026
+
+## Opgeloste problemen
+
+### 🐛 "ValueTracker kan niet automatisch worden afgesloten" — definitieve fix
+De installatie bleef blokkeren met twee foutmeldingen, ook na v1.2.1 en v1.2.2.
+
+**Oorzaak (definitief):** Na analyse van de electron-builder NSIS-broncode bleek dat electron-builder een eigen `_CHECK_APP_RUNNING` macro heeft die in de install Section draait. Deze macro probeert ValueTracker zelf te sluiten via PowerShell of tasklist, en toont bij mislukking de "appCannotBeClosed" dialog. Onze eerdere fixes (`customInit`) draaiden wél vóór deze check, maar electron-builder voerde daarna alsnog zijn eigen detectie uit.
+
+**Oplossing:** Gebruik van de officiële electron-builder escape-hatch: door `customCheckAppRunning` te definiëren wordt de **hele** `_CHECK_APP_RUNNING` logica van electron-builder vervangen door onze eigen implementatie. Deze macro voert een directe `taskkill /F` uit via het volledige systeempad (`$SYSDIR\taskkill.exe`) en wacht 2 seconden — zonder enige dialoogvenster te tonen. Daarna gaat de installatie altijd gewoon door. Er is tevens een vroegere kill in `.onInit` behouden als extra zekerheid.
+
+---
+
 # ValueTracker V1.2.2 - Bugfix: Auto-updater (installer-level fix)
 
 **Releasedatum:** 27 februari 2026
