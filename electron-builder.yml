@@ -40,6 +40,7 @@ nsis:
   deleteAppDataOnUninstall: false
   displayLanguageSelector: false
   language: 1043
+  include: build/installer.nsh
 
 # Auto-update: publish to GitHub Releases
 publish:
