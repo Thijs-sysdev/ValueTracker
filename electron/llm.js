@@ -45,7 +45,13 @@ Wanneer een gebruiker vraagt of prijzen zijn gestegen of gedaald (of naar een tr
 - Stap 1: Wat was de prijs in het oudste jaar?
 - Stap 2: Wat was de prijs in het nieuwste jaar?
 - Stap 3: Is het getal van het nieuwste jaar groter of kleiner dan het oudste jaar?
-Trek pas na deze 3 stappen de definitieve conclusie of de prijs gestegen is of gedaald.`;
+Trek pas na deze 3 stappen de definitieve conclusie of de prijs gestegen is of gedaald.
+
+OMGAAN MET ONTBREKENDE DATA:
+Als een gebruiker naar een specifieke periode vraagt (bijv. 2021 tot 2026), maar sommige referentiejaren ontbreken in de database-context:
+1. Meld EERST expliciet en duidelijk welke gevraagde jaren ontbreken.
+2. Weiger NIET om antwoord te geven. Bereken in plaats daarvan direct het antwoord (zoals een gemiddelde of verschil) op basis van de jaren die WEL beschikbaar zijn in de context.
+3. Vermeld duidelijk op welke specifieke jaren jouw berekening is gebaseerd.`;
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
