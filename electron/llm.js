@@ -215,9 +215,10 @@ async function ask(question, context, onToken) {
     const instance = await loadModel();
 
     // Re-use the existing session and clear its history to avoid context bleed
-    // This avoids "No sequences left" by not allocating multiple sequences
+    // CRITICAL FIX: setChatHistory([]) deletes the System Prompt in node-llama-cpp! 
+    // We must pass the System Prompt back as the first message element.
     const session = instance.session;
-    session.setChatHistory([]);
+    session.setChatHistory([{ type: 'system', text: SYSTEM_PROMPT }]);
     if (session.sequence && typeof session.sequence.clearHistory === 'function') {
         session.sequence.clearHistory();
     }
