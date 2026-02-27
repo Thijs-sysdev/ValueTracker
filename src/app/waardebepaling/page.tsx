@@ -71,6 +71,13 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Get the real Windows username via Electron IPC at runtime.
+      // Falls back to 'Onbekend' in web/dev environments.
+      const username: string = (typeof window !== 'undefined' && (window as any).electronAPI?.getUsername)
+        ? await (window as any).electronAPI.getUsername()
+        : 'Onbekend';
+      formData.append('username', username);
+
       const response = await processValuationFile(formData);
 
       if (response.success && response.data) {

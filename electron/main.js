@@ -11,6 +11,7 @@ const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const http = require('http');
+const os = require('os');
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const PORT = 3000;
@@ -163,6 +164,12 @@ function createWindow() {
 
 // ── Hide native menu bar ─────────────────────────────────────────────────────
 Menu.setApplicationMenu(null);
+
+// ── IPC handlers ──────────────────────────────────────────────────────────────
+// Returns the real Windows login name of the current user at runtime.
+ipcMain.handle('get-username', () => {
+    return os.userInfo().username;
+});
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {

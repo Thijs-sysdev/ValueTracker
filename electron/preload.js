@@ -41,3 +41,8 @@ contextBridge.exposeInMainWorld('electronUpdater', {
     // True when running inside Electron
     isElectron: true,
 });
+
+contextBridge.exposeInMainWorld('electronAPI', {
+    // Get the Windows username of the currently logged-in user
+    getUsername: () => ipcRenderer.invoke('get-username'),
+});

@@ -1,7 +1,6 @@
 'use server';
 
 import * as xlsx from 'xlsx';
-import os from 'os';
 import { ValuationInput, ValuationOutput, HistoryItem } from '@/lib/types';
 import { calculateValuation } from '@/lib/valuation';
 import { lookupPrice, addLearnedPrices } from '@/lib/priceList';
@@ -145,7 +144,7 @@ export async function processValuationFile(formData: FormData): Promise<{
             id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9),
             date: new Date().toISOString(),
             fileName: file.name,
-            createdBy: os.userInfo().username,
+            createdBy: (formData.get('username') as string) || 'Onbekend',
             totalSalesValue,
             itemsProcessed: results.length,
             acceptedItems,
