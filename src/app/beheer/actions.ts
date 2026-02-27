@@ -97,45 +97,45 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
 }
 
 export async function getDatabaseStats() {
+    // Load price DB stats (may be slow/unavailable for large OneDrive files)
+    let totalItems = 0;
+    let uniqueManufacturers = 0;
+    let topManufacturers = '';
     try {
-        // Always clear the in-memory cache so we read fresh data from disk
         clearPriceListCache();
         const db = getPriceList();
-
         const uniqueItems = new Set<string>();
         const manufacturers = new Set<string>();
-
         Object.values(db).forEach((item: any) => {
             if (item.manufacturer) manufacturers.add(item.manufacturer);
             if (item.article_number) uniqueItems.add(`${item.manufacturer}_${item.article_number}`);
         });
-
-        const totalItems = uniqueItems.size;
-
+        totalItems = uniqueItems.size;
+        uniqueManufacturers = manufacturers.size;
         const mList = Array.from(manufacturers);
-        const topManufacturers = mList.slice(0, 5).join(', ') + (mList.length > 5 ? '...' : '');
-
-        // Load metadata
-        const metaPath = getDataFilePath('price_db_meta.json');
-        let metadata = [];
-        if (fs.existsSync(metaPath)) {
-            try {
-                metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-            } catch (_e) {
-                console.error("Failed to parse metadata", _e);
-            }
-        }
-
-        return {
-            success: true,
-            totalItems,
-            uniqueManufacturers: manufacturers.size,
-            topManufacturers,
-            metadata
-        };
-    } catch {
-        return { success: false, error: "Kon database statistieken niet laden." };
+        topManufacturers = mList.slice(0, 5).join(', ') + (mList.length > 5 ? '...' : '');
+    } catch (e) {
+        console.error('[getDatabaseStats] Failed to load price_db.json:', e);
     }
+
+    // Load metadata independently — always shown even if price DB fails
+    let metadata: any[] = [];
+    try {
+        const metaPath = getDataFilePath('price_db_meta.json');
+        if (fs.existsSync(metaPath)) {
+            metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+        }
+    } catch (e) {
+        console.error('[getDatabaseStats] Failed to load price_db_meta.json:', e);
+    }
+
+    return {
+        success: true,
+        totalItems,
+        uniqueManufacturers,
+        topManufacturers,
+        metadata
+    };
 }
 
 export async function uploadPriceListAction(formData: FormData) {
