@@ -199,13 +199,10 @@ async function loadModel() {
 async function ask(question, context, onToken) {
     const instance = await loadModel();
 
-    // Create a fresh session per question to avoid context bleed between users
-    const { LlamaChatSession } = instance;
-    const freshSequence = instance.context.getSequence();
-    const session = new LlamaChatSession({
-        contextSequence: freshSequence,
-        systemPrompt: SYSTEM_PROMPT,
-    });
+    // Re-use the existing session and clear its history to avoid context bleed
+    // This avoids "No sequences left" by not allocating multiple sequences
+    const session = instance.session;
+    session.setChatHistory([]);
 
     // Build the prompt with the database context injected
     const prompt = context
