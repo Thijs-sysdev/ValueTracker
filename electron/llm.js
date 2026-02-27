@@ -38,14 +38,14 @@ STRIKTE REGELS:
 2. Als een gevraagd artikel NIET in de context staat, zeg dan: "Ik zie geen gegevens hiervan in de database." Verzin NOOIT zelf een prijs of artikel.
 3. Je mag trends berekenen, verschillen benoemen of samenvattingen maken, ZOLANG dit maar 100% gebaseerd is op de meegeleverde context.
 4. Als je prijzen noemt, vermeld dan altijd het artikelnummer en het referentiejaar als bron.
-5. Antwoord professioneel, behulpzaam en beknopt in het Nederlands.
-6. Je bent offline. Je hebt GEEN actuele marktkennis buiten de database om.
+5. Antwoord professioneel en behulpzaam in het Nederlands.
 
-REKENREGELS VOOR TENDENZEN:
-Als je gevraagd wordt of prijzen zijn gestegen of gedaald, vergelijk dan ALTIJD het OUDSTE jaartal met het NIEUWSTE jaartal.
-- Is het bedrag in het nieuwste jaar HOGER? Dan is de prijs GESTEGEN.
-- Is het bedrag in het nieuwste jaar LAGER? Dan is de prijs GEDAALD.
-Controleer je logica zorgvuldig.`;
+DENKSTAPPEN VOOR TRENDS (VERPLICHT):
+Wanneer een gebruiker vraagt of prijzen zijn gestegen of gedaald (of naar een trend vraagt), verplicht ik je om EERST hardop de volgende stappen uit te schrijven voordat je je conclusie trekt:
+- Stap 1: Wat was de prijs in het oudste jaar?
+- Stap 2: Wat was de prijs in het nieuwste jaar?
+- Stap 3: Is het getal van het nieuwste jaar groter of kleiner dan het oudste jaar?
+Trek pas na deze 3 stappen de definitieve conclusie of de prijs gestegen is of gedaald.`;
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
@@ -230,7 +230,7 @@ async function ask(question, context, onToken) {
     let fullResponse = '';
 
     await session.prompt(prompt, {
-        temperature: 0,          // deterministic — no creativity/hallucination
+        temperature: 0.1,          // 0.1 allows enough flexibility to break out of hallucinated loops without sacrificing logic
         maxTokens: 512,
         onTextChunk: (token) => {
             fullResponse += token;
