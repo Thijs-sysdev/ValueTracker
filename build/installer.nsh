@@ -2,14 +2,29 @@
 ; ValueTracker — Custom NSIS Installer Script
 ; build/installer.nsh
 ;
-; Adds an optional AI-model download step after the main installation.
-; The model (~1.8 GB) is downloaded to:
-;   %APPDATA%\valuetracker\models\
-; which is the same path that electron/llm.js expects at runtime.
+; customInit    → runs inside .onInit (very first thing the installer does),
+;                 BEFORE the built-in "app is running" process check.
+;                 Kills any running ValueTracker instance so that check never
+;                 triggers the "please close the app" dialog.
 ;
-; This hook runs inside the `customInstall` macro, which electron-builder
-; injects AFTER extracting the app files and BEFORE showing the Finish page.
+; customInstall → runs after files are extracted. Adds the optional AI-model
+;                 download step.
 ; =============================================================================
+
+; ── Kill running ValueTracker BEFORE NSIS checks for active processes ─────────
+!macro customInit
+  ; Silently terminate any running ValueTracker.exe.
+  ; /F = force-kill  |  /IM = match by image name  |  /T = include child tree
+  ; nsExec::ExecToStack captures output so nothing is shown to the user.
+  ; Exit code 0 = killed successfully, 128 = process not found — both are fine.
+  nsExec::ExecToStack 'taskkill /F /IM "ValueTracker.exe" /T'
+  Pop $0  ; exit code — discard
+  Pop $1  ; stdout/stderr  — discard
+
+  ; Give Windows 1 second to fully release all file and process handles
+  ; before NSIS continues with its running-process detection.
+  Sleep 1000
+!macroend
 
 !macro customInstall
   ; ── Create the models directory ──────────────────────────────────────────────
