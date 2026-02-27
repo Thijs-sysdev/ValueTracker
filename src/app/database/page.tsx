@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Search, TrendingUp, TrendingDown, Minus, Loader2, AlertCircle, FileText } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
-import { searchArticleHistory } from '../beheer/actions';
+import { searchArticleHistory } from '../prijslijsten-beheer/actions';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function PrijsDatabase() {
@@ -108,7 +108,7 @@ export default function PrijsDatabase() {
                         <div className="absolute inset-0 bg-brand-400/20 blur-xl group-hover:bg-brand-400/40 transition-colors"></div>
                         <Search className="w-6 h-6 relative z-10" />
                     </div>
-                    Prijs Database
+                    Database
                 </h2>
                 <p className="text-slate-400 text-lg">
                     Zoek naar specifieke artikelnummers om hun prijshistorie en markttrends te analyseren.

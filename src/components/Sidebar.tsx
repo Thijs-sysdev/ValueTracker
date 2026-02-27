@@ -9,8 +9,8 @@ import pkg from '../../package.json';
 const mainLinks = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Waardebepaling', href: '/waardebepaling', icon: Calculator },
-    { name: 'Database', href: '/beheer', icon: Database },
-    { name: 'Prijs Database', href: '/prijs-database', icon: History },
+    { name: 'Prijslijsten Beheer', href: '/prijslijsten-beheer', icon: Database },
+    { name: 'Database', href: '/database', icon: History },
 ];
 
 const bottomLinks = [

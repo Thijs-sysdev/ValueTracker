@@ -3,7 +3,7 @@
 import { Activity, Database, Scale, History, HelpCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getDatabaseStats } from './beheer/actions';
+import { getDatabaseStats } from './prijslijsten-beheer/actions';
 
 export default function Dashboard() {
     const [stats, setStats] = useState<any>(null);
@@ -37,17 +37,17 @@ export default function Dashboard() {
             color: 'bg-brand-500/10 border-brand-500/20 hover:border-brand-500/50',
         },
         {
-            title: 'Prijs Database',
+            title: 'Database',
             description: 'Zoek in de actuele prijshistorie van alle ingelezen artikelen.',
             icon: <History className="w-8 h-8 text-blue-400" />,
-            href: '/prijs-database',
+            href: '/database',
             color: 'bg-blue-500/10 border-blue-500/20 hover:border-blue-500/50',
         },
         {
-            title: 'Database Beheer',
+            title: 'Prijslijsten Beheer',
             description: 'Upload en beheer prijslijsten van leveranciers.',
             icon: <Database className="w-8 h-8 text-emerald-400" />,
-            href: '/beheer',
+            href: '/prijslijsten-beheer',
             color: 'bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/50',
         }
     ];

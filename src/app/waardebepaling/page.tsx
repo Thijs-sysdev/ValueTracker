@@ -289,7 +289,7 @@ export default function Dashboard() {
                     {results?.slice(0, 50).map((row, idx) => (
                       <tr key={idx} className="hover:bg-white/60 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-5 font-semibold font-mono text-slate-900 dark:text-slate-100">
-                          <Link href={`/beheer?search=${encodeURIComponent(row.article_number)}`} className="text-brand-600 dark:text-brand-400 hover:text-brand-500 dark:hover:text-brand-300 hover:underline transition-colors" title="Bekijk prijshistorie">
+                          <Link href={`/database?search=${encodeURIComponent(row.article_number)}`} className="text-brand-600 dark:text-brand-400 hover:text-brand-500 dark:hover:text-brand-300 hover:underline transition-colors" title="Bekijk prijshistorie">
                             {row.article_number}
                           </Link>
                         </td>
