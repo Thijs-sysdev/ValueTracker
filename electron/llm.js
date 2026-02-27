@@ -39,7 +39,13 @@ STRIKTE REGELS:
 3. Je mag trends berekenen, verschillen benoemen of samenvattingen maken, ZOLANG dit maar 100% gebaseerd is op de meegeleverde context.
 4. Als je prijzen noemt, vermeld dan altijd het artikelnummer en het referentiejaar als bron.
 5. Antwoord professioneel, behulpzaam en beknopt in het Nederlands.
-6. Je bent offline. Je hebt GEEN actuele marktkennis buiten de database om.`;
+6. Je bent offline. Je hebt GEEN actuele marktkennis buiten de database om.
+
+REKENREGELS VOOR TENDENZEN:
+Als je gevraagd wordt of prijzen zijn gestegen of gedaald, vergelijk dan ALTIJD het OUDSTE jaartal met het NIEUWSTE jaartal.
+- Is het bedrag in het nieuwste jaar HOGER? Dan is de prijs GESTEGEN.
+- Is het bedrag in het nieuwste jaar LAGER? Dan is de prijs GEDAALD.
+Controleer je logica zorgvuldig.`;
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
