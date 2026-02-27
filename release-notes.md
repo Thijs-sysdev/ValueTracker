@@ -1,3 +1,18 @@
+# ValueTracker V1.2.2 - Bugfix: Auto-updater (installer-level fix)
+
+**Releasedatum:** 27 februari 2026
+
+## Opgeloste problemen
+
+### 🐛 Auto-updater: "Sluit ValueTracker af" op andere pc's
+Op pc's met versie 1.2.0/1.2.1 installé bleef de NSIS-installer melden dat ValueTracker afgesloten moest worden, ondanks dat de app al gestopt was.
+
+**Oorzaak:** De fix in v1.2.1 (extra sluitlogica in `main.js`) helpt alleen voor _toekomstige_ updates — bij het updaten _vanaf_ v1.2.0 of v1.2.1 draait de oude `main.js` nog. Die heeft de fix niet. NSIS controleert het actieve process nog vóórdat onze eigen `customInstall` macro draait.
+
+**Oplossing:** De fix is verplaatst naar de NSIS installer zelf via een `customInit` macro. Deze draait als allereerste stap van de installer (in `.onInit`), vóór de process-check. De macro voert `taskkill /F /IM ValueTracker.exe /T` uit en wacht 1 seconde, zodat het process volledig gestopt is voordat de installatie verdergaat. Deze fix werkt onafhankelijk van welke versie van `main.js` geïnstalleerd is.
+
+---
+
 # ValueTracker V1.2.1 - Bugfix: Auto-updater
 
 **Releasedatum:** 27 februari 2026
