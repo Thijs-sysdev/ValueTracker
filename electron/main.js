@@ -56,7 +56,20 @@ function setupAutoUpdater() {
 
 // IPC: renderer asks to install update now
 ipcMain.on('updater:install-now', () => {
-    autoUpdater.quitAndInstall(false, true);
+    // Close all windows first so the process is fully gone before the
+    // NSIS installer launches its "app still running" detection check.
+    const allWindows = BrowserWindow.getAllWindows();
+    allWindows.forEach(win => {
+        if (!win.isDestroyed()) win.close();
+    });
+
+    // Give the OS ~500 ms to release file/process handles before the
+    // installer executable is launched by electron-updater.
+    setTimeout(() => {
+        // isSilent=false  → show the installer UI
+        // isForceRunAfter=true → relaunch ValueTracker after installation
+        autoUpdater.quitAndInstall(false, true);
+    }, 500);
 });
 
 // IPC: renderer asks to open the releases page
