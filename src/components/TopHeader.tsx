@@ -218,7 +218,7 @@ export default function TopHeader() {
                             {aiStatus === 'context' && (
                                 <div className="flex items-center justify-center py-12 text-muted-foreground flex-col gap-4">
                                     <Database className="h-8 w-8 text-primary/40 animate-pulse" />
-                                    <p className="font-medium">Database doorzoeken naar relevante prijshistorie...</p>
+                                    <p className="font-medium">Kennisbank & prijsdatabase doorzoeken...</p>
                                     <div className="space-y-2 mt-4 w-full max-w-sm flex flex-col gap-2">
                                         <Skeleton className="h-4 w-full" />
                                         <Skeleton className="h-4 w-[90%]" />
@@ -226,6 +226,7 @@ export default function TopHeader() {
                                     </div>
                                 </div>
                             )}
+
 
                             {aiStatus === 'thinking' && (
                                 <div className="flex items-center justify-center py-12 text-muted-foreground flex-col gap-4">
