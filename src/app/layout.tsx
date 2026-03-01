@@ -4,6 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import TopHeader from "@/components/TopHeader";
 import PageTransition from "@/components/PageTransition";
 import UpdateBanner from "@/components/UpdateBanner";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "ValueTracker",
@@ -18,9 +19,11 @@ export default function RootLayout({
   return (
     <html lang="nl" className="dark" suppressHydrationWarning>
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="antialiased h-screen w-screen bg-[#0A0E17] text-slate-200 selection:bg-brand-500 selection:text-white overflow-hidden relative" suppressHydrationWarning>
+      <body className="antialiased h-screen w-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground overflow-hidden relative" suppressHydrationWarning>
         {/* Subtle global background gradients for premium feel */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-brand-500/10 blur-[120px]" />
@@ -48,6 +51,7 @@ export default function RootLayout({
             </main>
           </div>
         </div>
+        <Toaster theme="dark" richColors position="top-right" />
       </body>
     </html>
   );
