@@ -33,8 +33,8 @@ export async function getAiContextForQuestion(question: string): Promise<{
         // 1. Detective AI — only runs if trend intent detected, otherwise resolves null
         (async () => {
             if (!analysisIntent) return null;
-            console.log(`[AI/Context] Detective mode activated for: ${analysisIntent.manufacturer}`);
-            return aggregateByManufacturer(analysisIntent.manufacturer);
+            console.log(`[AI/Context] Detective mode: ${JSON.stringify(analysisIntent)}`);
+            return aggregateByManufacturer(analysisIntent);
         })(),
 
         // 2. RAG: semantic vector search over knowledge-base documents

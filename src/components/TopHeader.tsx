@@ -252,11 +252,11 @@ export default function TopHeader() {
                                     {aiStatus === 'streaming' && (
                                         <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse relative top-1"></span>
                                     )}
-                                    {/* Chart — rendered below LLM response when Detective AI found trend data */}
-                                    {chartData && aiStatus === 'done' && (
+                                    {/* Chart — only for trend mode, not category comparisons */}
+                                    {chartData && !chartData.isCategoryMode && aiStatus === 'done' && (
                                         <AiPriceChart
                                             manufacturer={chartData.manufacturer}
-                                            yearlyData={chartData.yearlyData}
+                                            yearlyData={chartData.yearlyData ?? []}
                                             totalArticles={chartData.totalArticles}
                                         />
                                     )}
