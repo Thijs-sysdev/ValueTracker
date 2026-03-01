@@ -247,7 +247,7 @@ export default function TopHeader() {
                             )}
 
                             {(aiStatus === 'streaming' || aiStatus === 'done') && (
-                                <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-headings:text-foreground">
+                                <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-headings:text-foreground prose-table:border-collapse prose-table:w-full prose-th:border prose-th:border-border prose-th:p-2 prose-td:border prose-td:border-border prose-td:p-2 prose-th:bg-muted/50">
                                     <ReactMarkdown>{aiResponse}</ReactMarkdown>
                                     {aiStatus === 'streaming' && (
                                         <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse relative top-1"></span>

@@ -92,7 +92,8 @@ export async function aggregateByManufacturer(manufacturer: string): Promise<Agg
         totalArticles++;
 
         for (const { year, price } of item.history) {
-            if (typeof price !== 'number' || price <= 0) continue;
+            // Filter invalid types and obvious Excel corruption artifacts (> €200,000)
+            if (typeof price !== 'number' || price <= 0 || price > 200000) continue;
             if (!yearBuckets[year]) yearBuckets[year] = { sum: 0, count: 0 };
             yearBuckets[year].sum += price;
             yearBuckets[year].count++;
