@@ -4,6 +4,8 @@ import { Search, Bell, Sparkles, X, ChevronRight, Loader2, Database } from 'luci
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAiContextForQuestion } from '@/app/api/ai/actions';
+import { AggregationResult } from '@/lib/ai/aggregator';
+import AiPriceChart from '@/components/AiPriceChart';
 import ReactMarkdown from 'react-markdown';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,7 @@ export default function TopHeader() {
     const [aiError, setAiError] = useState('');
     const [isAiAvailable, setIsAiAvailable] = useState(false);
     const [matchedCodes, setMatchedCodes] = useState<string[]>([]);
+    const [chartData, setChartData] = useState<AggregationResult | undefined>(undefined);
 
 
     useEffect(() => {
@@ -82,11 +85,13 @@ export default function TopHeader() {
         setAiStatus('context');
         setAiResponse('');
         setAiError('');
+        setChartData(undefined);
 
         try {
-            // 1. Fetch Context via Server Action
-            const { contextString: context, matchedCodes: extractedCodes } = await getAiContextForQuestion(cleanQuery);
+            // 1. Fetch Context via Server Action (also runs Detective AI + RAG in parallel)
+            const { contextString: context, matchedCodes: extractedCodes, chartData: detectedChart } = await getAiContextForQuestion(cleanQuery);
             setMatchedCodes(extractedCodes);
+            if (detectedChart) setChartData(detectedChart);
 
             setAiStatus('thinking');
 
@@ -139,6 +144,7 @@ export default function TopHeader() {
         setShowOverlay(false);
         setQuery('');
         setAiStatus('idle');
+        setChartData(undefined);
     };
 
     return (
@@ -245,6 +251,14 @@ export default function TopHeader() {
                                     <ReactMarkdown>{aiResponse}</ReactMarkdown>
                                     {aiStatus === 'streaming' && (
                                         <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse relative top-1"></span>
+                                    )}
+                                    {/* Chart — rendered below LLM response when Detective AI found trend data */}
+                                    {chartData && aiStatus === 'done' && (
+                                        <AiPriceChart
+                                            manufacturer={chartData.manufacturer}
+                                            yearlyData={chartData.yearlyData}
+                                            totalArticles={chartData.totalArticles}
+                                        />
                                     )}
                                 </div>
                             )}
