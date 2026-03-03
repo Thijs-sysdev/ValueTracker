@@ -712,6 +712,8 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
                 skippedFiles.push(fileName);
             }
             processedFileIndex++;
+            // Yield the event loop so the progress-polling requests can be served
+            await new Promise(resolve => setTimeout(resolve, 0));
         }
 
         if (totalProcessedCount > 0) {
