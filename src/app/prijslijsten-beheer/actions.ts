@@ -277,12 +277,6 @@ function processWorkbookInternal(workbook: xlsx.WorkBook, currentDb: any, fileNa
                         if (sKey && currentDb[sKey]) currentDb[sKey].predecessor = artCode;
                     });
                 }
-
-                Object.values(currentDb).forEach((other: any) => {
-                    if (other.successor === artCode || (cleanArtCode && other.successor === cleanArtCode)) {
-                        item.predecessor = other.article_number;
-                    }
-                });
             };
 
             addOrUpdateItem(artCode);
@@ -693,6 +687,23 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
         }
 
         if (totalProcessedCount > 0) {
+            // FINAL PASS: Reconcile all successor/predecessor links across the entire database
+            // This ensures that even if articles were processed out of order, all links are established.
+            console.log(`[reanalyze] Final reconciliation pass for ${Object.keys(currentDb).length} items...`);
+            Object.values(currentDb).forEach((item: any) => {
+                if (item.successor) {
+                    const succKey = item.successor;
+                    const cleanSuccKey = succKey.replace(/[^a-zA-Z0-9]/g, '');
+
+                    // If the successor exists in the DB, set its predecessor link
+                    if (currentDb[succKey]) {
+                        currentDb[succKey].predecessor = item.article_number;
+                    } else if (cleanSuccKey && currentDb[cleanSuccKey]) {
+                        currentDb[cleanSuccKey].predecessor = item.article_number;
+                    }
+                }
+            });
+
             fs.writeFileSync(dbPath, JSON.stringify(currentDb, null, 2));
             fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
             clearPriceListCache();
