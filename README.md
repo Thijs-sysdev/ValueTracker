@@ -2,7 +2,7 @@
 
 > **Parttracker BV** — Geautomatiseerde waardebepalingstool voor surplus elektronica inventaris
 
-![Version](https://img.shields.io/badge/versie-1.2.3-teal)
+![Version](https://img.shields.io/badge/versie-1.2.4-teal)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Next.js%20%2B%20Electron-black)
 
