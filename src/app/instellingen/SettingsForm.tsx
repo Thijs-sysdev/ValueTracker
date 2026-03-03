@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateDataDir, updatePriceListsDir } from './actions';
 import { reanalyzePriceListsAction } from '../prijslijsten-beheer/actions';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Save, Info, HardDrive, Database } from 'lucide-react';
 
 interface Props {
     currentDataDir: string;
@@ -63,27 +63,38 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
     return (
         <div className="settings-form">
             <div className="settings-field">
-                <label htmlFor="dataDir">Data map pad</label>
+                <label htmlFor="dataDir">
+                    <Database className="w-3.5 h-3.5 inline mr-2 text-brand-400" />
+                    Data map pad
+                </label>
                 <div className="settings-input-row">
                     <input
                         id="dataDir"
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Bijv. C:\Users\...\OneDrive - Parttracker BV\Apps\ValueTracker"
+                        placeholder="Bijv. C:\Users\...\OneDrive\ValueTracker"
                         className="settings-input"
                     />
                     <button
                         onClick={handleSave}
                         disabled={isPending}
-                        className="btn-primary"
+                        className="btn-primary gap-2"
                     >
+                        {isPending ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Save className="w-4 h-4" />
+                        )}
                         {isPending ? 'Opslaan...' : 'Opslaan'}
                     </button>
                 </div>
-                <p className="settings-hint">
-                    Voer het volledige pad in naar de map met <code>config.json</code>, <code>history.json</code> en <code>price_db.json</code>.
-                </p>
+                <div className="settings-hint">
+                    <Info className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span>
+                        Voer het volledige pad in naar de map met <code>config.json</code>, <code>history.json</code> en <code>price_db.json</code>.
+                    </span>
+                </div>
             </div>
 
             {message && (
@@ -95,7 +106,10 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
             <hr className="settings-divider" />
 
             <div className="settings-field">
-                <label htmlFor="priceListsDir">Ingelezen Prijslijsten map pad</label>
+                <label htmlFor="priceListsDir">
+                    <HardDrive className="w-3.5 h-3.5 inline mr-2 text-brand-400" />
+                    Ingelezen Prijslijsten map pad
+                </label>
                 <div className="settings-input-row">
                     <input
                         id="priceListsDir"
@@ -108,14 +122,22 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
                     <button
                         onClick={handleSavePriceListsDir}
                         disabled={isPending}
-                        className="btn-primary"
+                        className="btn-primary gap-2"
                     >
+                        {isPending ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Save className="w-4 h-4" />
+                        )}
                         {isPending ? 'Opslaan...' : 'Opslaan'}
                     </button>
                 </div>
-                <p className="settings-hint">
-                    Voer het volledige pad in naar de OneDrive map waar prijslijsten bewaard moeten worden.
-                </p>
+                <div className="settings-hint">
+                    <Info className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span>
+                        Voer het volledige pad in naar de OneDrive map waar prijslijsten bewaard moeten worden.
+                    </span>
+                </div>
             </div>
 
             {priceListsMessage && (
