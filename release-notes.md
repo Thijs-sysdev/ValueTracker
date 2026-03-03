@@ -1,3 +1,41 @@
+# ValueTracker V1.2.4 - Grote AI & Functionaliteit Update
+
+**Releasedatum:** 3 maart 2026
+
+## Nieuwe Functies & Verbeteringen
+
+### 🤖 Geavanceerd RAG Systeem
+De AI-assistent is nu nog krachtiger dankzij een hybride RAG-pipeline (Retrieval-Augmented Generation). 
+- **Lokale Vector Store:** De AI kan nu razendsnel relevante informatie vinden in je lokale database.
+- **OneDrive Documenten:** De AI heeft nu direct toegang tot handleidingen en prijslijsten die op OneDrive staan voor een bredere context.
+
+### 🔍 Detective AI & Visuele Grafieken
+De AI-assistent in de overlay is uitgebreid met analytische vaardigheden:
+- **Detective Mode:** De AI herkent nu automatisch de intentie van je vraag (bijv. prijsverloop over jaren) en presenteert de data in overzichtelijke Markdown-tabellen.
+- **Visual Analytics:** Er is een nieuwe visuele prijsgrafiek toegevoegd aan de AI-overlay, zodat je trends direct in één oogopslag kunt zien.
+
+### 🔗 Product Lifecycle Tracking
+Nieuwe logica voor artikelnummers:
+- **Successor/Predecessor Linking:** Artikelen worden nu gekoppeld aan hun opvolgers of voorgangers. 
+- **Slimme Depreciatie:** Voor phased-out artikelen wordt de afschrijving nu automatisch bevroren vanaf het jaar van uitfasering.
+
+### 🔄 Bulk Re-analyse
+Nieuwe knop op de Instellingenpagina om alle ingelezen prijslijsten in één keer opnieuw te scannen met de nieuwste parsing-logica, zonder handmatige re-uploads.
+
+### 🎨 Styling & UX Upgrade
+De instellingenpagina heeft een volledige visuele revisie gekregen:
+- **Deep Dark SaaS Aesthetic:** Voor een professionele en moderne uitstraling.
+- **Verbeterde Inputs:** Duidelijkere invoervelden met betere leesbaarheid en volledige breedte layout.
+- **Interactieve Knoppen:** Nieuwe knopstyling met duidelijke hover-effecten en loading indicators.
+
+## Opgeloste problemen
+
+### 🐛 Startup & Stabiliteit
+- **Onnxruntime Fix:** Opgelost dat de app soms niet startte door fouten in de gebundelde AI-runtime.
+- **Robuustere Analyse:** De re-analyse slaat nu automatisch corrupte of met een wachtwoord beveiligde bestanden over in plaats van vast te lopen.
+
+---
+
 # ValueTracker V1.2.3 - Bugfix: Auto-updater (definitieve installer-fix)
 
 **Releasedatum:** 27 februari 2026

@@ -18,6 +18,8 @@ export interface DBPriceRecord {
     article_number: string;
     history: HistoricalPrice[];
     phased_out_year?: number;
+    successor?: string;
+    predecessor?: string;
 }
 
 export interface PriceReference {
@@ -29,6 +31,8 @@ export interface PriceReference {
     is_fallback?: boolean;
     price_note?: string;
     phased_out_year?: number;
+    successor?: string;
+    predecessor?: string;
 }
 
 export interface ValuationOutput {

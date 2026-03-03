@@ -118,7 +118,16 @@ export async function getAiContextForQuestion(question: string): Promise<{
         for (const item of items) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const prices = item.history?.map((h: any) => `${h.year}: €${h.price}`).join(' | ') ?? '';
-            priceBlock += `[Artikel: ${item.article_number} | Prijzen: ${prices}]\n`;
+
+            // Build lifecycle string
+            let lifecycle = 'Actief';
+            if (item.successor && item.phased_out_year) lifecycle = `Vervangen in ${item.phased_out_year}`;
+            else if (item.phased_out_year) lifecycle = `Uitgefaseerd (${item.phased_out_year})`;
+
+            const succStr = item.successor ? ` | Opvolger: ${item.successor}` : '';
+            const predStr = item.predecessor ? ` | Voorganger: ${item.predecessor}` : '';
+
+            priceBlock += `[Artikel: ${item.article_number} | Status: ${lifecycle}${succStr}${predStr} | Prijzen: ${prices}]\n`;
         }
         sections.push(priceBlock);
     } else if (priceDbResult.status === 'rejected') {

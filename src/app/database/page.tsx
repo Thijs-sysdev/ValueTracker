@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, TrendingUp, TrendingDown, Minus, Loader2, AlertCircle, FileText } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Minus, Loader2, AlertCircle, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
 import { searchArticleHistory } from '../prijslijsten-beheer/actions';
@@ -201,6 +201,20 @@ export default function PrijsDatabase() {
                             <h4 className="text-4xl lg:text-5xl font-extrabold text-white font-mono tracking-tight">
                                 {searchResult.article_number}
                             </h4>
+
+                            {/* Lifecycle Status Badge */}
+                            {(searchResult.phased_out_year || searchResult.successor) && (
+                                <div className="mt-3 flex items-center gap-2">
+                                    <span className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded-md border ${searchResult.successor && searchResult.phased_out_year ? 'bg-red-950/40 text-red-400 border-red-900/50' :
+                                            searchResult.phased_out_year ? 'bg-amber-950/40 text-amber-400 border-amber-900/50' :
+                                                'bg-blue-950/40 text-blue-400 border-blue-900/50'
+                                        }`}>
+                                        {searchResult.successor && searchResult.phased_out_year ? 'Vervangen' :
+                                            searchResult.phased_out_year ? `Uitgefaseerd (${searchResult.phased_out_year})` :
+                                                'Status Onbekend'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-4 relative z-10 flex-wrap">
@@ -222,6 +236,46 @@ export default function PrijsDatabase() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Lifecycle Links */}
+                    {(searchResult.successor || searchResult.predecessor) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                            {searchResult.predecessor && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery(searchResult.predecessor);
+                                        performSearch(searchResult.predecessor);
+                                    }}
+                                    className="flex items-center gap-4 p-4 bg-slate-900/40 hover:bg-slate-800/60 border border-slate-800/50 rounded-2xl transition-all text-left group"
+                                >
+                                    <div className="p-2 bg-slate-800 rounded-lg text-slate-400 group-hover:text-brand-400 transition-colors">
+                                        <ArrowLeft size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Voorganger</p>
+                                        <p className="text-sm font-mono text-slate-300 group-hover:text-white transition-colors">{searchResult.predecessor}</p>
+                                    </div>
+                                </button>
+                            )}
+                            {searchResult.successor && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery(searchResult.successor);
+                                        performSearch(searchResult.successor);
+                                    }}
+                                    className="flex items-center justify-between gap-4 p-4 bg-slate-900/40 hover:bg-slate-800/60 border border-slate-800/50 rounded-2xl transition-all text-right group"
+                                >
+                                    <div className="text-left">
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Opvolger</p>
+                                        <p className="text-sm font-mono text-slate-300 group-hover:text-white transition-colors">{searchResult.successor}</p>
+                                    </div>
+                                    <div className="p-2 bg-slate-800 rounded-lg text-slate-400 group-hover:text-brand-400 transition-colors">
+                                        <ArrowRight size={18} />
+                                    </div>
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {/* Chart Area */}
                     {chartData.length > 1 ? (

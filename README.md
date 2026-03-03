@@ -2,7 +2,7 @@
 
 > **Parttracker BV** — Geautomatiseerde waardebepalingstool voor surplus elektronica inventaris
 
-![Version](https://img.shields.io/badge/versie-1.2.3-teal)
+![Version](https://img.shields.io/badge/versie-1.2.4-teal)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![Built with](https://img.shields.io/badge/built%20with-Next.js%20%2B%20Electron-black)
 
@@ -74,7 +74,7 @@
 
 ### Optie A — Installer downloaden ✅ (aanbevolen)
 
-1. Ga naar de [**Releases**](https://github.com/Thijs-sysdev/OEV/releases) pagina
+1. Ga naar de [**Releases**](https://github.com/Thijs-sysdev/ValueTracker/releases) pagina
 2. Download de nieuwste **`ValueTrackerSetup-x.x.x.exe`**
 3. Voer het installatiebestand uit en volg de wizard
 4. De app verschijnt als snelkoppeling op het bureaublad en in het Startmenu
@@ -92,8 +92,8 @@
 
 ```bash
 # 1. Repository clonen
-git clone https://github.com/Thijs-sysdev/OEV.git
-cd OEV
+git clone https://github.com/Thijs-sysdev/ValueTracker.git
+cd ValueTracker
 
 # 2. Afhankelijkheden installeren
 npm install
@@ -156,4 +156,4 @@ Alle gebruikers die naar dezelfde OneDrive map wijzen, delen automatisch dezelfd
 
 ## 📞 Vragen?
 
-Maak een [Issue](https://github.com/Thijs-sysdev/OEV/issues) aan of neem contact op met de ontwikkelaar.
+Maak een [Issue](https://github.com/Thijs-sysdev/ValueTracker/issues) aan of neem contact op met de ontwikkelaar.

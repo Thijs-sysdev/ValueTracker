@@ -28,7 +28,7 @@ export default function HelpPage() {
         {
             title: 'Database Beheer',
             icon: <Database className="w-6 h-6 text-emerald-400" />,
-            description: 'Beheer het collectieve geheugen van OEV door nieuwe leverancierslijsten te uploaden.',
+            description: 'Beheer het collectieve geheugen van ValueTracker door nieuwe leverancierslijsten te uploaden.',
             items: [
                 'Overschrijf of voeg referentieprijzen toe',
                 'Bekijk database statistieken',

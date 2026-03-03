@@ -31,9 +31,12 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
     priceCols: { idx: number, year: number | null }[];
     priceUnitIdx: number;
     phasedOutIdx: number;
+    successorIdx: number;
 } | null {
     const articleWords = ['artikel', 'art', 'code', 'type', 'typ', 'bestel', 'reference', 'product', 'id nummer', 'mlfb', 'part no', 'part_no', 'partnumber', 'part number', 'sku', 'item code', 'item no', 'bestelnummer', 'bestel nr', 'materiaal', 'material'];
-    const articleBlacklist = ['gewicht', 'afmeting', 'packing', 'verpakking', 'succesor', 'successor', 'ean', 'upc', 'groep'];
+    const articleBlacklist = ['gewicht', 'afmeting', 'packing', 'verpakking', 'ean', 'upc', 'groep'];
+
+    const successorWords = ['successor', 'succesor', 'opvolger', 'vervanger', 'vervangt door'];
 
     const priceWords = ['bruto', 'prijs', 'price', 'catalogusprijs', 'list price', 'listprice', 'msrp', 'list_price', 'brutoprijs', 'bruto prijs', 'retail price', 'base price', 'standard price'];
     // FIX 1: Blacklist '/100' so we don't accidentally pick the "Prijs/100" column if a "Prijs /stuk" column is also available
@@ -61,6 +64,7 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
             const possiblePriceCols: { idx: number, year: number | null }[] = [];
             let possiblePriceUnitIdx = -1;
             let possiblePhasedOutIdx = -1;
+            let possibleSuccessorIdx = -1;
 
             for (let c = 0; c < strCols.length; c++) {
                 const colHeader = strCols[c];
@@ -86,6 +90,9 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
                 if (possiblePhasedOutIdx === -1 && phasedOutWords.some(w => colHeader.includes(w))) {
                     possiblePhasedOutIdx = c;
                 }
+                if (possibleSuccessorIdx === -1 && successorWords.some(w => colHeader.includes(w))) {
+                    possibleSuccessorIdx = c;
+                }
             }
 
             if (possibleArtIdx !== -1 && possiblePriceCols.length > 0 && !possiblePriceCols.some(pc => pc.idx === possibleArtIdx)) {
@@ -95,7 +102,8 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
                     artIdx: possibleArtIdx,
                     priceCols: possiblePriceCols,
                     priceUnitIdx: possiblePriceUnitIdx,
-                    phasedOutIdx: possiblePhasedOutIdx
+                    phasedOutIdx: possiblePhasedOutIdx,
+                    successorIdx: possibleSuccessorIdx
                 };
             }
         }
@@ -146,6 +154,148 @@ export async function getDatabaseStats() {
     };
 }
 
+/**
+ * Internal logic to process an Excel workbook and merge data into the given DB object.
+ * Used by both uploadPriceListAction and reanalyzePriceListsAction.
+ */
+function processWorkbookInternal(workbook: xlsx.WorkBook, currentDb: any, fileName: string): {
+    newItemsCount: number;
+    updatedItemsCount: number;
+    totalProcessed: number;
+    processedYears: number[];
+    defaultManufacturer: string;
+} | null {
+    const detected = detectPriceListColumns(workbook);
+    if (!detected) return null;
+
+    const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx, successorIdx } = detected;
+
+    let newItemsCount = 0;
+    let updatedItemsCount = 0;
+    let totalProcessed = 0;
+
+    let defaultManufacturer = "Onbekend";
+    let detectedYear = new Date().getFullYear();
+
+    const yearMatch = fileName.match(/(20\d{2})/);
+    if (yearMatch) detectedYear = parseInt(yearMatch[1], 10);
+
+    const mMatch = fileName.replace(/(20\d{2})/, '').match(/([a-zA-Z\s]+)(?=[\/\\][^\/\\]+\.xlsx?$)|([a-zA-Z\s]+)(?=\s|$|\.|_|-)/);
+    if (mMatch && mMatch[0]) defaultManufacturer = mMatch[0].trim();
+
+    const phasedOutTrueValues = ['ja', 'yes', 'true', '1', 'x', 'v', 'uitloop', 'vervallen', 'obsolete', 'uitgefaseerd', 'phased out'];
+
+    const headers = data[headerRowIdx].map((h: any) => (h?.toString() || "").toLowerCase());
+    const manufacturerIdx = headers.findIndex((h: string) => h.includes('fabrikant') || h.includes('merk') || h.includes('manufacturer'));
+
+    for (let i = headerRowIdx + 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || !Array.isArray(row)) continue;
+
+        const artCodeRaw = row[artIdx];
+        if (artCodeRaw === undefined || artCodeRaw === null) continue;
+
+        const artCode = artCodeRaw.toString().trim();
+        if (!artCode) continue;
+
+        let isPhasedOut = false;
+        if (phasedOutIdx !== -1) {
+            const poVal = row[phasedOutIdx];
+            if (poVal) {
+                const poStr = poVal.toString().trim().toLowerCase();
+                if (phasedOutTrueValues.includes(poStr)) isPhasedOut = true;
+            }
+        }
+
+        let unitDivisor = 1;
+        if (priceUnitIdx !== -1) {
+            const unitValRaw = row[priceUnitIdx];
+            if (unitValRaw) {
+                const unitVal = parseInt(unitValRaw.toString().replace(/[^0-9]/g, ''), 10);
+                if (!isNaN(unitVal) && unitVal > 1) unitDivisor = unitVal;
+            }
+        }
+
+        let successorArtCode: string | null = null;
+        if (successorIdx !== -1) {
+            const sVal = row[successorIdx];
+            if (sVal) successorArtCode = sVal.toString().trim();
+        }
+
+        let itemProcessed = false;
+
+        for (const pCol of priceCols) {
+            const priceRaw = row[pCol.idx];
+            if (priceRaw === undefined || priceRaw === null) continue;
+
+            let parsedPrice = parseExcelPrice(priceRaw);
+            if (isNaN(parsedPrice) || parsedPrice <= 0) continue;
+
+            if (unitDivisor > 1) parsedPrice = parsedPrice / unitDivisor;
+
+            const cleanArtCode = artCode.replace(/[^a-zA-Z0-9]/g, '');
+            const manufacturer = manufacturerIdx !== -1 && row[manufacturerIdx] ? row[manufacturerIdx].toString() : defaultManufacturer;
+            const isNewArticle = !currentDb[artCode] && (!cleanArtCode || !currentDb[cleanArtCode]);
+            let isUpdate = false;
+            const priceYearToUse = pCol.year !== null ? pCol.year : detectedYear;
+
+            const addOrUpdateItem = (key: string) => {
+                if (!currentDb[key]) {
+                    currentDb[key] = {
+                        manufacturer,
+                        article_number: artCode,
+                        history: [{ year: priceYearToUse, price: parsedPrice }]
+                    };
+                    if (isPhasedOut) currentDb[key].phased_out_year = detectedYear;
+                } else {
+                    const item = currentDb[key];
+                    if (!item.history) {
+                        item.history = [{ year: item.year || 2021, price: item.gross_price }];
+                        delete item.gross_price;
+                        delete item.year;
+                    }
+                    if (isPhasedOut) item.phased_out_year = detectedYear;
+
+                    const existingYear = item.history.find((h: any) => h.year === priceYearToUse);
+                    if (existingYear) {
+                        if (existingYear.price !== parsedPrice) isUpdate = true;
+                        existingYear.price = parsedPrice;
+                    } else {
+                        item.history.push({ year: priceYearToUse, price: parsedPrice });
+                        item.history.sort((a: any, b: any) => a.year - b.year);
+                        isUpdate = true;
+                    }
+                }
+
+                const item = currentDb[key];
+                if (isPhasedOut) item.phased_out_year = detectedYear;
+
+                if (successorArtCode) {
+                    item.successor = successorArtCode;
+                    const cleanSuccessor = successorArtCode.replace(/[^a-zA-Z0-9]/g, '');
+                    [successorArtCode, cleanSuccessor].forEach(sKey => {
+                        if (sKey && currentDb[sKey]) currentDb[sKey].predecessor = artCode;
+                    });
+                }
+            };
+
+            addOrUpdateItem(artCode);
+            if (cleanArtCode && cleanArtCode !== artCode) addOrUpdateItem(cleanArtCode);
+
+            if (isNewArticle) newItemsCount++;
+            else if (isUpdate) updatedItemsCount++;
+
+            itemProcessed = true;
+        }
+
+        if (itemProcessed) totalProcessed++;
+    }
+
+    const processedYears = Array.from(new Set(priceCols.map((p: any) => p.year !== null ? p.year : detectedYear)));
+
+    return { newItemsCount, updatedItemsCount, totalProcessed, processedYears, defaultManufacturer };
+}
+
 export async function uploadPriceListAction(formData: FormData) {
     try {
         const file = formData.get('file') as File;
@@ -153,14 +303,10 @@ export async function uploadPriceListAction(formData: FormData) {
 
         const buffer = await file.arrayBuffer();
 
-        // Save the uploaded file to the configured price lists directory
         const priceListsDir = getPriceListsDir();
-        if (!fs.existsSync(priceListsDir)) {
-            fs.mkdirSync(priceListsDir, { recursive: true });
-        }
+        if (!fs.existsSync(priceListsDir)) fs.mkdirSync(priceListsDir, { recursive: true });
 
         let savedFileName = file.name;
-        // Basic deduplication for filenames
         let fileIndex = 1;
         while (fs.existsSync(path.join(priceListsDir, savedFileName))) {
             const ext = path.extname(file.name);
@@ -173,177 +319,37 @@ export async function uploadPriceListAction(formData: FormData) {
 
         const workbook = xlsx.read(buffer, { type: 'buffer' });
 
-        const detected = detectPriceListColumns(workbook);
-        if (!detected) {
+        const dbPath = getDataFilePath('price_db.json');
+        let currentDb: any = {};
+        if (fs.existsSync(dbPath)) currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+
+        const result = processWorkbookInternal(workbook, currentDb, file.name);
+        if (!result) {
             return { success: false, error: "Kon de kolommen voor 'Artikelnummer' en 'Brutoprijs' niet automatisch detecteren in de eerste 30 rijen van de tabbladen." };
         }
 
-        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx } = detected;
+        const { newItemsCount, updatedItemsCount, totalProcessed, processedYears, defaultManufacturer } = result;
 
-        // 2. Extract Data
-        let newItemsCount = 0;
-        let updatedItemsCount = 0;
-        let totalProcessed = 0;
-
-        // Load existing db
-        const dbPath = getDataFilePath('price_db.json');
-        let currentDb: any = {};
-        if (fs.existsSync(dbPath)) {
-            currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-        }
-
-        // Guess manufacturer and year from filename
-        let defaultManufacturer = "Onbekend";
-        let detectedYear = new Date().getFullYear();
-
-        const yearMatch = file.name.match(/(20\d{2})/);
-        if (yearMatch) detectedYear = parseInt(yearMatch[1], 10);
-
-        const mMatch = file.name.replace(/(20\d{2})/, '').match(/([a-zA-Z\s]+)(?=[\/\\][^\/\\]+\.xlsx?$)|([a-zA-Z\s]+)(?=\s|$|\.|_|-)/);
-        if (mMatch && mMatch[0]) defaultManufacturer = mMatch[0].trim();
-
-        const phasedOutTrueValues = ['ja', 'yes', 'true', '1', 'x', 'v', 'uitloop', 'vervallen', 'obsolete', 'uitgefaseerd', 'phased out'];
-
-        // Check if there is a Fabrikant column explicitly
-        const headers = data[headerRowIdx].map((h: any) => (h?.toString() || "").toLowerCase());
-        const manufacturerIdx = headers.findIndex((h: string) => h.includes('fabrikant') || h.includes('merk') || h.includes('manufacturer'));
-
-        for (let i = headerRowIdx + 1; i < data.length; i++) {
-            const row = data[i];
-            if (!row || !Array.isArray(row)) continue;
-
-            const artCodeRaw = row[artIdx];
-            if (artCodeRaw === undefined || artCodeRaw === null) continue;
-
-            const artCode = artCodeRaw.toString().trim();
-            if (!artCode) continue;
-
-            let isPhasedOut = false;
-            if (phasedOutIdx !== -1) {
-                const poVal = row[phasedOutIdx];
-                if (poVal) {
-                    const poStr = poVal.toString().trim().toLowerCase();
-                    if (phasedOutTrueValues.includes(poStr)) {
-                        isPhasedOut = true;
-                    }
-                }
-            }
-
-            // Adjust base price if a per-unit divisor column is present and valid
-            let unitDivisor = 1;
-            if (priceUnitIdx !== -1) {
-                const unitValRaw = row[priceUnitIdx];
-                if (unitValRaw) {
-                    const unitVal = parseInt(unitValRaw.toString().replace(/[^0-9]/g, ''), 10);
-                    if (!isNaN(unitVal) && unitVal > 1) {
-                        unitDivisor = unitVal;
-                    }
-                }
-            }
-
-            let itemProcessed = false;
-
-            // Loop through all detected price columns
-            for (const pCol of priceCols) {
-                const priceRaw = row[pCol.idx];
-                if (priceRaw === undefined || priceRaw === null) continue;
-
-                let parsedPrice = parseExcelPrice(priceRaw);
-                if (isNaN(parsedPrice) || parsedPrice <= 0) continue;
-
-                if (unitDivisor > 1) {
-                    parsedPrice = parsedPrice / unitDivisor;
-                }
-                const cleanArtCode = artCode.replace(/[^a-zA-Z0-9]/g, '');
-
-                const manufacturer = manufacturerIdx !== -1 && row[manufacturerIdx] ? row[manufacturerIdx].toString() : defaultManufacturer;
-
-                const isNewArticle = !currentDb[artCode] && (!cleanArtCode || !currentDb[cleanArtCode]);
-                let isUpdate = false;
-                const priceYearToUse = pCol.year !== null ? pCol.year : detectedYear;
-
-                const addOrUpdateItem = (key: string) => {
-                    if (!currentDb[key]) {
-                        currentDb[key] = {
-                            manufacturer: manufacturer,
-                            article_number: artCode,
-                            history: [{ year: priceYearToUse, price: parsedPrice }]
-                        };
-                        if (isPhasedOut) currentDb[key].phased_out_year = detectedYear;
-                    } else {
-                        const item = currentDb[key];
-                        // If it's a legacy record without history, migrate it
-                        if (!item.history) {
-                            item.history = [{ year: item.year || 2021, price: item.gross_price }];
-                            delete item.gross_price;
-                            delete item.year;
-                        }
-
-                        if (isPhasedOut) item.phased_out_year = detectedYear;
-
-                        const existingYear = item.history.find((h: any) => h.year === priceYearToUse);
-                        if (existingYear) {
-                            if (existingYear.price !== parsedPrice) isUpdate = true;
-                            existingYear.price = parsedPrice;
-                        } else {
-                            item.history.push({ year: priceYearToUse, price: parsedPrice });
-                            item.history.sort((a: any, b: any) => a.year - b.year);
-                            isUpdate = true;
-                        }
-                    }
-                };
-
-                addOrUpdateItem(artCode);
-                if (cleanArtCode && cleanArtCode !== artCode) {
-                    addOrUpdateItem(cleanArtCode);
-                }
-
-                if (isNewArticle) {
-                    newItemsCount++;
-                } else if (isUpdate) {
-                    updatedItemsCount++;
-                }
-
-                itemProcessed = true;
-            }
-
-            if (itemProcessed) {
-                totalProcessed++;
-            }
-        }
-
-        // 3. Save to disk
         const dataDir = path.dirname(dbPath);
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
-        }
+        if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
         fs.writeFileSync(dbPath, JSON.stringify(currentDb, null, 2));
 
-        let processedYears: number[] = [];
-
-        // 4. Update Metadata Log
         if (totalProcessed > 0) {
             const metaPath = getDataFilePath('price_db_meta.json');
             let metaLog: any[] = [];
-            if (fs.existsSync(metaPath)) {
-                metaLog = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-            }
-
-            // Add a log entry for each unique year processed
-            processedYears = Array.from(new Set(priceCols.map((p: any) => p.year !== null ? p.year : detectedYear)));
+            if (fs.existsSync(metaPath)) metaLog = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
 
             for (const y of processedYears) {
                 metaLog.unshift({
                     id: crypto.randomUUID(),
-                    fileName: savedFileName, // Use the actually saved filename
-                    originalFileName: file.name, // Keep track of the original name just in case
+                    fileName: savedFileName,
+                    originalFileName: file.name,
                     manufacturer: defaultManufacturer,
                     year: y,
-                    itemCount: newItemsCount, // Note: this represents new items across the whole file upload
+                    itemCount: newItemsCount,
                     addedAt: new Date().toISOString()
                 });
             }
-
             fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
         }
 
@@ -379,7 +385,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
             return { success: false, error: "Kon de kolommen voor 'Artikelnummer' en 'Brutoprijs' niet automatisch detecteren." };
         }
 
-        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx } = detected;
+        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx, successorIdx } = detected;
 
         // Detect year & manufacturer from filename
         let detectedYear = new Date().getFullYear();
@@ -623,5 +629,109 @@ export async function searchArticleHistory(query: string): Promise<any | null> {
     } catch (e) {
         console.error("Failed to search article history:", e);
         return null;
+    }
+}
+
+export async function reanalyzePriceListsAction(): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+        const priceListsDir = getPriceListsDir();
+        if (!fs.existsSync(priceListsDir)) {
+            return { success: false, error: "Map met prijslijsten bestaat niet." };
+        }
+
+        const files = fs.readdirSync(priceListsDir).filter(f => f.endsWith('.xlsx') || f.endsWith('.xls'));
+        if (files.length === 0) {
+            return { success: false, error: "Geen Excel bestanden gevonden in de map." };
+        }
+
+        const dbPath = getDataFilePath('price_db.json');
+        let currentDb: any = {};
+        if (fs.existsSync(dbPath)) currentDb = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+
+        const metaPath = getDataFilePath('price_db_meta.json');
+        let metaLog: any[] = [];
+        if (fs.existsSync(metaPath)) metaLog = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+
+        let totalProcessedCount = 0;
+        let fileCount = 0;
+        const skippedFiles: string[] = [];
+
+        for (const fileName of files) {
+            try {
+                const filePath = path.join(priceListsDir, fileName);
+                const buffer = fs.readFileSync(filePath);
+                const workbook = xlsx.read(buffer, { type: 'buffer' });
+
+                const result = processWorkbookInternal(workbook, currentDb, fileName);
+                if (!result || result.totalProcessed === 0) continue;
+
+                totalProcessedCount += result.totalProcessed;
+                fileCount++;
+
+                // Update metadata: update existing entries instead of duplicating
+                for (const y of result.processedYears) {
+                    const existingEntry = metaLog.find((m: any) => m.fileName === fileName && m.year === y && m.manufacturer === result.defaultManufacturer);
+                    if (existingEntry) {
+                        existingEntry.itemCount = result.newItemsCount;
+                        existingEntry.addedAt = new Date().toISOString();
+                    } else {
+                        metaLog.unshift({
+                            id: crypto.randomUUID(),
+                            fileName,
+                            originalFileName: fileName,
+                            manufacturer: result.defaultManufacturer,
+                            year: y,
+                            itemCount: result.newItemsCount,
+                            addedAt: new Date().toISOString()
+                        });
+                    }
+                }
+            } catch (fileError) {
+                console.error(`Error processing file ${fileName}:`, fileError);
+                skippedFiles.push(fileName);
+            }
+        }
+
+        if (totalProcessedCount > 0) {
+            // FINAL PASS: Reconcile all successor/predecessor links across the entire database
+            // This ensures that even if articles were processed out of order, all links are established.
+            console.log(`[reanalyze] Final reconciliation pass for ${Object.keys(currentDb).length} items...`);
+            Object.values(currentDb).forEach((item: any) => {
+                if (item.successor) {
+                    const succKey = item.successor;
+                    const cleanSuccKey = succKey.replace(/[^a-zA-Z0-9]/g, '');
+
+                    // If the successor exists in the DB, set its predecessor link
+                    if (currentDb[succKey]) {
+                        currentDb[succKey].predecessor = item.article_number;
+                    } else if (cleanSuccKey && currentDb[cleanSuccKey]) {
+                        currentDb[cleanSuccKey].predecessor = item.article_number;
+                    }
+                }
+            });
+
+            fs.writeFileSync(dbPath, JSON.stringify(currentDb, null, 2));
+            fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
+            clearPriceListCache();
+
+            let msg = `Re-analyse voltooid! ${fileCount} bestanden verwerkt, ${totalProcessedCount} artikel-entries bijgewerkt.`;
+            if (skippedFiles.length > 0) {
+                msg += ` (${skippedFiles.length} bestanden overgeslagen, mogelijk beveiligd of corrupt)`;
+            }
+
+            return {
+                success: true,
+                message: msg
+            };
+        } else {
+            let err = "Geen bruikbare data gevonden in de bestanden.";
+            if (skippedFiles.length > 0) {
+                err += ` (${skippedFiles.length} bestanden overgeslagen vanwege fouten/beveiliging)`;
+            }
+            return { success: false, error: err };
+        }
+    } catch (error) {
+        console.error("Re-analyze error", error);
+        return { success: false, error: error instanceof Error ? error.message : "Er trad een fout op tijdens de re-analyse." };
     }
 }
