@@ -654,35 +654,41 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
 
         let totalProcessedCount = 0;
         let fileCount = 0;
+        const skippedFiles: string[] = [];
 
         for (const fileName of files) {
-            const filePath = path.join(priceListsDir, fileName);
-            const buffer = fs.readFileSync(filePath);
-            const workbook = xlsx.read(buffer, { type: 'buffer' });
+            try {
+                const filePath = path.join(priceListsDir, fileName);
+                const buffer = fs.readFileSync(filePath);
+                const workbook = xlsx.read(buffer, { type: 'buffer' });
 
-            const result = processWorkbookInternal(workbook, currentDb, fileName);
-            if (!result || result.totalProcessed === 0) continue;
+                const result = processWorkbookInternal(workbook, currentDb, fileName);
+                if (!result || result.totalProcessed === 0) continue;
 
-            totalProcessedCount += result.totalProcessed;
-            fileCount++;
+                totalProcessedCount += result.totalProcessed;
+                fileCount++;
 
-            // Update metadata: update existing entries instead of duplicating
-            for (const y of result.processedYears) {
-                const existingEntry = metaLog.find((m: any) => m.fileName === fileName && m.year === y && m.manufacturer === result.defaultManufacturer);
-                if (existingEntry) {
-                    existingEntry.itemCount = result.newItemsCount;
-                    existingEntry.addedAt = new Date().toISOString();
-                } else {
-                    metaLog.unshift({
-                        id: crypto.randomUUID(),
-                        fileName,
-                        originalFileName: fileName,
-                        manufacturer: result.defaultManufacturer,
-                        year: y,
-                        itemCount: result.newItemsCount,
-                        addedAt: new Date().toISOString()
-                    });
+                // Update metadata: update existing entries instead of duplicating
+                for (const y of result.processedYears) {
+                    const existingEntry = metaLog.find((m: any) => m.fileName === fileName && m.year === y && m.manufacturer === result.defaultManufacturer);
+                    if (existingEntry) {
+                        existingEntry.itemCount = result.newItemsCount;
+                        existingEntry.addedAt = new Date().toISOString();
+                    } else {
+                        metaLog.unshift({
+                            id: crypto.randomUUID(),
+                            fileName,
+                            originalFileName: fileName,
+                            manufacturer: result.defaultManufacturer,
+                            year: y,
+                            itemCount: result.newItemsCount,
+                            addedAt: new Date().toISOString()
+                        });
+                    }
                 }
+            } catch (fileError) {
+                console.error(`Error processing file ${fileName}:`, fileError);
+                skippedFiles.push(fileName);
             }
         }
 
@@ -707,12 +713,22 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
             fs.writeFileSync(dbPath, JSON.stringify(currentDb, null, 2));
             fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
             clearPriceListCache();
+
+            let msg = `Re-analyse voltooid! ${fileCount} bestanden verwerkt, ${totalProcessedCount} artikel-entries bijgewerkt.`;
+            if (skippedFiles.length > 0) {
+                msg += ` (${skippedFiles.length} bestanden overgeslagen, mogelijk beveiligd of corrupt)`;
+            }
+
             return {
                 success: true,
-                message: `Re-analyse voltooid! ${fileCount} bestanden verwerkt, ${totalProcessedCount} artikel-entries bijgewerkt.`
+                message: msg
             };
         } else {
-            return { success: false, error: "Geen bruikbare data gevonden in de bestanden." };
+            let err = "Geen bruikbare data gevonden in de bestanden.";
+            if (skippedFiles.length > 0) {
+                err += ` (${skippedFiles.length} bestanden overgeslagen vanwege fouten/beveiliging)`;
+            }
+            return { success: false, error: err };
         }
     } catch (error) {
         console.error("Re-analyze error", error);
