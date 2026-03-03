@@ -59,7 +59,9 @@ export function lookupPrice(articleNumber: string, targetYear: number): PriceRef
             article_number: record.article_number,
             gross_price: exactMatch.price,
             year: targetYear,
-            phased_out_year: record.phased_out_year
+            phased_out_year: record.phased_out_year,
+            successor: record.successor,
+            predecessor: record.predecessor
         };
     }
 
@@ -89,7 +91,9 @@ export function lookupPrice(articleNumber: string, targetYear: number): PriceRef
             year: targetYear,
             is_interpolated: true,
             price_note: `✅ Geïnterpoleerd tussen ${before.year} (€${before.price}) en ${after.year} (€${after.price})`,
-            phased_out_year: record.phased_out_year
+            phased_out_year: record.phased_out_year,
+            successor: record.successor,
+            predecessor: record.predecessor
         };
     } else {
         // Fallback to closest available
@@ -101,7 +105,9 @@ export function lookupPrice(articleNumber: string, targetYear: number): PriceRef
             year: targetYear,
             is_fallback: true,
             price_note: `⚠️ Geen data voor ${targetYear}. Historische prijs uit ${closestFallback.year} gebruikt (€${closestFallback.price}).`,
-            phased_out_year: record.phased_out_year
+            phased_out_year: record.phased_out_year,
+            successor: record.successor,
+            predecessor: record.predecessor
         };
     }
 }

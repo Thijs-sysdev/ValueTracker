@@ -31,9 +31,12 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
     priceCols: { idx: number, year: number | null }[];
     priceUnitIdx: number;
     phasedOutIdx: number;
+    successorIdx: number;
 } | null {
     const articleWords = ['artikel', 'art', 'code', 'type', 'typ', 'bestel', 'reference', 'product', 'id nummer', 'mlfb', 'part no', 'part_no', 'partnumber', 'part number', 'sku', 'item code', 'item no', 'bestelnummer', 'bestel nr', 'materiaal', 'material'];
-    const articleBlacklist = ['gewicht', 'afmeting', 'packing', 'verpakking', 'succesor', 'successor', 'ean', 'upc', 'groep'];
+    const articleBlacklist = ['gewicht', 'afmeting', 'packing', 'verpakking', 'ean', 'upc', 'groep'];
+
+    const successorWords = ['successor', 'succesor', 'opvolger', 'vervanger', 'vervangt door'];
 
     const priceWords = ['bruto', 'prijs', 'price', 'catalogusprijs', 'list price', 'listprice', 'msrp', 'list_price', 'brutoprijs', 'bruto prijs', 'retail price', 'base price', 'standard price'];
     // FIX 1: Blacklist '/100' so we don't accidentally pick the "Prijs/100" column if a "Prijs /stuk" column is also available
@@ -61,6 +64,7 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
             const possiblePriceCols: { idx: number, year: number | null }[] = [];
             let possiblePriceUnitIdx = -1;
             let possiblePhasedOutIdx = -1;
+            let possibleSuccessorIdx = -1;
 
             for (let c = 0; c < strCols.length; c++) {
                 const colHeader = strCols[c];
@@ -86,6 +90,9 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
                 if (possiblePhasedOutIdx === -1 && phasedOutWords.some(w => colHeader.includes(w))) {
                     possiblePhasedOutIdx = c;
                 }
+                if (possibleSuccessorIdx === -1 && successorWords.some(w => colHeader.includes(w))) {
+                    possibleSuccessorIdx = c;
+                }
             }
 
             if (possibleArtIdx !== -1 && possiblePriceCols.length > 0 && !possiblePriceCols.some(pc => pc.idx === possibleArtIdx)) {
@@ -95,7 +102,8 @@ function detectPriceListColumns(workbook: xlsx.WorkBook): {
                     artIdx: possibleArtIdx,
                     priceCols: possiblePriceCols,
                     priceUnitIdx: possiblePriceUnitIdx,
-                    phasedOutIdx: possiblePhasedOutIdx
+                    phasedOutIdx: possiblePhasedOutIdx,
+                    successorIdx: possibleSuccessorIdx
                 };
             }
         }
@@ -178,7 +186,7 @@ export async function uploadPriceListAction(formData: FormData) {
             return { success: false, error: "Kon de kolommen voor 'Artikelnummer' en 'Brutoprijs' niet automatisch detecteren in de eerste 30 rijen van de tabbladen." };
         }
 
-        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx } = detected;
+        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx, successorIdx } = detected;
 
         // 2. Extract Data
         let newItemsCount = 0;
@@ -241,6 +249,14 @@ export async function uploadPriceListAction(formData: FormData) {
                 }
             }
 
+            let successorArtCode: string | null = null;
+            if (successorIdx !== -1) {
+                const sVal = row[successorIdx];
+                if (sVal) {
+                    successorArtCode = sVal.toString().trim();
+                }
+            }
+
             let itemProcessed = false;
 
             // Loop through all detected price columns
@@ -291,6 +307,29 @@ export async function uploadPriceListAction(formData: FormData) {
                             isUpdate = true;
                         }
                     }
+
+                    const item = currentDb[key];
+                    if (isPhasedOut) item.phased_out_year = detectedYear;
+
+                    if (successorArtCode) {
+                        item.successor = successorArtCode;
+
+                        // Link predecessor if successor already exists or exists as clean key
+                        const cleanSuccessor = successorArtCode.replace(/[^a-zA-Z0-9]/g, '');
+                        [successorArtCode, cleanSuccessor].forEach(sKey => {
+                            if (sKey && currentDb[sKey]) {
+                                currentDb[sKey].predecessor = artCode;
+                            }
+                        });
+                    }
+
+                    // Also check if any existing item has this one as its successor
+                    // to populate predecessor link from the reverse side
+                    Object.values(currentDb).forEach((other: any) => {
+                        if (other.successor === artCode || (cleanArtCode && other.successor === cleanArtCode)) {
+                            item.predecessor = other.article_number;
+                        }
+                    });
                 };
 
                 addOrUpdateItem(artCode);
@@ -379,7 +418,7 @@ export async function checkPriceListAction(formData: FormData): Promise<{
             return { success: false, error: "Kon de kolommen voor 'Artikelnummer' en 'Brutoprijs' niet automatisch detecteren." };
         }
 
-        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx } = detected;
+        const { data, headerRowIdx, artIdx, priceCols, priceUnitIdx, phasedOutIdx, successorIdx } = detected;
 
         // Detect year & manufacturer from filename
         let detectedYear = new Date().getFullYear();

@@ -74,7 +74,7 @@ ipcMain.on('updater:install-now', () => {
 
 // IPC: renderer asks to open the releases page
 ipcMain.on('updater:open-releases', () => {
-    shell.openExternal('https://github.com/Thijs-sysdev/OEV/releases');
+    shell.openExternal('https://github.com/Thijs-sysdev/ValueTracker/releases');
 });
 
 function sendToRenderer(channel, data) {

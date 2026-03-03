@@ -11,6 +11,7 @@
 import { create, search, insert, removeMultiple, type Results } from '@orama/orama';
 import { persist, restore } from '@orama/plugin-data-persistence';
 import fs from 'fs';
+import path from 'path';
 import { getVectorDbPath } from './paths';
 import { EMBEDDING_DIMENSIONS } from './embeddings';
 
@@ -64,7 +65,7 @@ export async function getVectorStore() {
 export async function persistStore(): Promise<void> {
     if (!db) return;
     const dbPath = getVectorDbPath();
-    const dir = require('path').dirname(dbPath);
+    const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     const serialized = await persist(db, 'json');

@@ -130,7 +130,7 @@ export default function Dashboard() {
           </p>
         </div>
         <a
-          href="/sjabloon-oev-v4-overtollige-artikelen-parttracker.xlsx"
+          href="/sjabloon-valuetracker-overtollige-artikelen-parttracker.xlsx"
           download="Sjabloon_Waardebepaling.xlsx"
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-500 bg-slate-800/20 hover:bg-slate-800/60 hover:text-slate-300 border border-slate-700/30 hover:border-slate-700/80 rounded-xl transition-all h-fit"
           title="Download referentie sjabloon"
