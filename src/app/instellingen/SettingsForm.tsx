@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateDataDir, updatePriceListsDir } from './actions';
+import { reanalyzePriceListsAction } from '../prijslijsten-beheer/actions';
+import { RefreshCw } from 'lucide-react';
 
 interface Props {
     currentDataDir: string;
@@ -16,7 +18,9 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
     const [priceListsInputValue, setPriceListsInputValue] = useState(currentPriceListsDir);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [priceListsMessage, setPriceListsMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [reanalyzeMessage, setReanalyzeMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [isReanalyzing, startReanalyzeTransition] = useTransition();
     const router = useRouter();
 
     const handleSave = () => {
@@ -39,6 +43,19 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
                 router.refresh();
             } else {
                 setPriceListsMessage({ type: 'error', text: `❌ ${result.error}` });
+            }
+        });
+    };
+
+    const handleReanalyze = () => {
+        startReanalyzeTransition(async () => {
+            setReanalyzeMessage(null);
+            const result = await reanalyzePriceListsAction();
+            if (result.success) {
+                setReanalyzeMessage({ type: 'success', text: result.message || 'Succesvol her-geanalyseerd!' });
+                router.refresh();
+            } else {
+                setReanalyzeMessage({ type: 'error', text: `❌ ${result.error}` });
             }
         });
     };
@@ -123,8 +140,25 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
                         </tr>
                         <tr>
                             <td>Ingelezen prijslijsten map:</td>
-                            <td><code>{currentPriceListsDir}</code></td>
+                            <td className="flex items-center gap-2">
+                                <code>{currentPriceListsDir}</code>
+                                <button
+                                    onClick={handleReanalyze}
+                                    disabled={isReanalyzing}
+                                    className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                                    title="Re-analyseer alle bestanden in deze map"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${isReanalyzing ? 'animate-spin text-brand-400' : ''}`} />
+                                </button>
+                            </td>
                         </tr>
+                        {reanalyzeMessage && (
+                            <tr>
+                                <td colSpan={2} className={`text-sm ${reanalyzeMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {reanalyzeMessage.text}
+                                </td>
+                            </tr>
+                        )}
                         <tr>
                             <td>Status:</td>
                             <td>
