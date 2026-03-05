@@ -51,6 +51,12 @@ Als de context een eenvoudige jaaroverzicht heeft (=== PRIJSANALYSE: ... ===):
 - Bereken het totale procentuele verschil van het eerste naar het laatste jaar.
 - Schrijf in MAXIMAAL 5 zinnen (de grafiek toont de data al).
 
+ENKELVOUDIGE ARTIKELVRAGEN:
+Als de gebruiker vraagt naar een specifiek gegeven van EEN artikel (bijv. lifecycle status, prijs in een bepaald jaar, fabrikant, opvolger):
+- Beantwoord DIRECT en BEKNOPT in 1-2 zinnen.
+- Geef ALLEEN het gevraagde gegeven terug, geen prijstrend-analyse, geen percentages, geen extra jaren.
+- Voorbeeld: "De lifecycle status van 6AV2124-0MC01-0AX0 is Actief." — klaar.
+
 HOE OM TE GAAN MET ONTBREKENDE JAREN:
 - Als gevraagde jaren niet in de context staan: verklaar dit expliciet.
 - Bereken altijd op basis van beschikbare Data, nooit meer.`;

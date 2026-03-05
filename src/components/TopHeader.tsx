@@ -279,7 +279,15 @@ export default function TopHeader() {
                                 <Button
                                     onClick={() => {
                                         closeOverlay();
-                                        const searchQuery = matchedCodes.length > 0 ? matchedCodes[0] : query.replace(/^ai:\s*/i, '');
+                                        // Prefer matched article codes from DB results; fallback: extract article number from the query
+                                        let searchQuery = '';
+                                        if (matchedCodes.length > 0) {
+                                            searchQuery = matchedCodes[0];
+                                        } else {
+                                            const words = query.replace(/^ai:\s*/i, '').replace(/[?,.!]/g, ' ').split(/\s+/);
+                                            const articleCode = words.find(w => w.length >= 4 && /[a-zA-Z]/.test(w) && /[0-9]/.test(w));
+                                            searchQuery = articleCode || query.replace(/^ai:\s*/i, '');
+                                        }
                                         router.push(`/database?search=${encodeURIComponent(searchQuery)}`);
                                     }}
                                 >

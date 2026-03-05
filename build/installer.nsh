@@ -91,6 +91,10 @@ ValueTracker start automatisch met AI-ondersteuning."
 !macroend
 
 !macro customUnInstall
+  ; ── During auto-updates (silent uninstall), skip the AI-model question ──────
+  ; We only want to ask this during a manual, user-initiated full uninstall.
+  IfSilent skip_ai_remove 0
+
   ; ── Optionally remove the AI model on uninstall ──────────────────────────────
   MessageBox MB_YESNO|MB_ICONQUESTION \
     "Wilt u ook het AI-model verwijderen?$\r$\n$\r$\n\
@@ -98,7 +102,7 @@ Het AI-model (~1.8 GB) bevindt zich in:$\r$\n\
 $APPDATA\valuetracker\models\$\r$\n$\r$\n\
 Kies 'Ja' om het model ook te verwijderen, of 'Nee' om het te bewaren \
 (handig als u ValueTracker later opnieuw installeert)." \
-    IDNO skip_ai_remove
+    /SD IDNO IDNO skip_ai_remove
 
   RMDir /r "$APPDATA\valuetracker\models"
   DetailPrint "AI-model verwijderd."

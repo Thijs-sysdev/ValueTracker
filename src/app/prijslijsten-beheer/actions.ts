@@ -7,6 +7,21 @@ import { exec } from 'child_process';
 import { getPriceList, clearPriceListCache } from '@/lib/priceList';
 import { getPriceListsDir, getDataFilePath } from '@/lib/dataPath';
 
+// ── Progress tracking helpers ────────────────────────────────────────────────
+const PROGRESS_FILE = path.join(process.cwd(), '.tmp', 'reanalyze_progress.json');
+
+function writeProgress(data: { total: number; processed: number; currentFile: string; status: 'busy' | 'idle' }) {
+    try {
+        const dir = path.dirname(PROGRESS_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data));
+    } catch { /* non-fatal */ }
+}
+
+function clearProgress() {
+    try { if (fs.existsSync(PROGRESS_FILE)) fs.unlinkSync(PROGRESS_FILE); } catch { /* non-fatal */ }
+}
+
 // Helper to clean price strings
 function parseExcelPrice(priceRaw: any): number {
     if (!priceRaw) return NaN;
@@ -656,8 +671,14 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
         let fileCount = 0;
         const skippedFiles: string[] = [];
 
+        // Initialise progress tracking
+        writeProgress({ total: files.length, processed: 0, currentFile: '', status: 'busy' });
+        let processedFileIndex = 0;
+
         for (const fileName of files) {
             try {
+                writeProgress({ total: files.length, processed: processedFileIndex, currentFile: fileName, status: 'busy' });
+
                 const filePath = path.join(priceListsDir, fileName);
                 const buffer = fs.readFileSync(filePath);
                 const workbook = xlsx.read(buffer, { type: 'buffer' });
@@ -690,6 +711,9 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
                 console.error(`Error processing file ${fileName}:`, fileError);
                 skippedFiles.push(fileName);
             }
+            processedFileIndex++;
+            // Yield the event loop so the progress-polling requests can be served
+            await new Promise(resolve => setTimeout(resolve, 0));
         }
 
         if (totalProcessedCount > 0) {
@@ -713,17 +737,16 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
             fs.writeFileSync(dbPath, JSON.stringify(currentDb, null, 2));
             fs.writeFileSync(metaPath, JSON.stringify(metaLog, null, 2));
             clearPriceListCache();
+            clearProgress();
 
             let msg = `Re-analyse voltooid! ${fileCount} bestanden verwerkt, ${totalProcessedCount} artikel-entries bijgewerkt.`;
             if (skippedFiles.length > 0) {
                 msg += ` (${skippedFiles.length} bestanden overgeslagen, mogelijk beveiligd of corrupt)`;
             }
 
-            return {
-                success: true,
-                message: msg
-            };
+            return { success: true, message: msg };
         } else {
+            clearProgress();
             let err = "Geen bruikbare data gevonden in de bestanden.";
             if (skippedFiles.length > 0) {
                 err += ` (${skippedFiles.length} bestanden overgeslagen vanwege fouten/beveiliging)`;
@@ -731,7 +754,18 @@ export async function reanalyzePriceListsAction(): Promise<{ success: boolean; m
             return { success: false, error: err };
         }
     } catch (error) {
+        clearProgress();
         console.error("Re-analyze error", error);
         return { success: false, error: error instanceof Error ? error.message : "Er trad een fout op tijdens de re-analyse." };
     }
+}
+
+export async function getReanalyzeProgressAction(): Promise<{ total: number; processed: number; currentFile: string; status: 'busy' | 'idle' }> {
+    try {
+        if (fs.existsSync(PROGRESS_FILE)) {
+            const raw = fs.readFileSync(PROGRESS_FILE, 'utf-8');
+            return JSON.parse(raw);
+        }
+    } catch { /* non-fatal */ }
+    return { total: 0, processed: 0, currentFile: '', status: 'idle' };
 }

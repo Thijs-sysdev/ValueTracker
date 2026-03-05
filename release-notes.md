@@ -1,3 +1,21 @@
+# ValueTracker V1.2.5 - Bugfix: Installer & AI Search
+**Releasedatum:** 5 maart 2026
+
+## Opgeloste problemen
+
+### 🐛 Installer: AI Pop-up Blokkade
+De automatische updater kon in sommige gevallen blijven hangen op de vraag voor het downloaden van het AI-model, waardoor de update niet geruisloos kon worden voltooid.
+- **Oplossing:** De installer controleert nu expliciet of hij in "Silent Mode" draait. Indien stil geïnstalleerd (auto-update), wordt de pop-up overgeslagen en wordt de standaardkeuze (Nee) gekozen om blokkades te voorkomen.
+
+### 🔍 AI Search Bar Verbeteringen
+- **Bekijk in Database:** Opgelost dat de knop "Bekijk in database" soms het verkeerde artikelnummer extraheerde uit de AI-context.
+- **Concise Responses:** De AI geeft nu kortere, krachtigere antwoorden bij simpele statusvragen over één artikel, zonder onnodige trendhistorie tenzij expliciet gevraagd.
+
+### 🔄 Re-analyse Stabiliteit
+- **Progress Fix:** Opgelost dat het voortgangspercentage van de re-analyse soms niet live update door het vrijgeven van de event-loop tijdens zware berekeningen.
+
+---
+
 # ValueTracker V1.2.4 - Grote AI & Functionaliteit Update
 
 **Releasedatum:** 3 maart 2026

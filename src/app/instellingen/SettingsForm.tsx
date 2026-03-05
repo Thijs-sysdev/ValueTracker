@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateDataDir, updatePriceListsDir } from './actions';
-import { reanalyzePriceListsAction } from '../prijslijsten-beheer/actions';
+import { reanalyzePriceListsAction, getReanalyzeProgressAction } from '../prijslijsten-beheer/actions';
 import { RefreshCw, Save, Info, HardDrive, Database } from 'lucide-react';
 
 interface Props {
@@ -21,7 +21,31 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
     const [reanalyzeMessage, setReanalyzeMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isPending, startTransition] = useTransition();
     const [isReanalyzing, startReanalyzeTransition] = useTransition();
+    const [reanalyzeProgress, setReanalyzeProgress] = useState<{ processed: number; total: number } | null>(null);
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const router = useRouter();
+
+    // Poll for progress while re-analysis is running
+    useEffect(() => {
+        if (isReanalyzing) {
+            setReanalyzeProgress(null);
+            pollRef.current = setInterval(async () => {
+                const prog = await getReanalyzeProgressAction();
+                if (prog.status === 'busy' && prog.total > 0) {
+                    setReanalyzeProgress({ processed: prog.processed, total: prog.total });
+                }
+            }, 1000);
+        } else {
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+                pollRef.current = null;
+            }
+            setReanalyzeProgress(null);
+        }
+        return () => {
+            if (pollRef.current) clearInterval(pollRef.current);
+        };
+    }, [isReanalyzing]);
 
     const handleSave = () => {
         startTransition(async () => {
@@ -167,10 +191,18 @@ export default function SettingsForm({ currentDataDir, currentPriceListsDir, set
                                 <button
                                     onClick={handleReanalyze}
                                     disabled={isReanalyzing}
-                                    className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                                    className="flex items-center gap-1.5 p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-70"
                                     title="Re-analyseer alle bestanden in deze map"
                                 >
                                     <RefreshCw className={`w-4 h-4 ${isReanalyzing ? 'animate-spin text-brand-400' : ''}`} />
+                                    {isReanalyzing && reanalyzeProgress && reanalyzeProgress.total > 0 && (
+                                        <span className="text-xs font-mono text-brand-400 tabular-nums">
+                                            {Math.round((reanalyzeProgress.processed / reanalyzeProgress.total) * 100)}%
+                                        </span>
+                                    )}
+                                    {isReanalyzing && !reanalyzeProgress && (
+                                        <span className="text-xs text-slate-500">...</span>
+                                    )}
                                 </button>
                             </td>
                         </tr>

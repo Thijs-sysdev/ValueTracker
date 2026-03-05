@@ -84,7 +84,7 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 - **Protocol:** Strict adherence to B.L.A.S.T. (Blueprint, Link, Architect, Stylize, Trigger) rules.
 - **Action:** Fix tool scripts upon failure and update `architecture/` SOPs before modifying code.
 - **Version Control:** You must automatically run `git add .`, `git commit -m "[Description of changes]"`, and `git push origin dev` after successfully writing new features or fixing bugs. Do not ask for redundant permission to push to the `dev` branch.
-- **Planning:** You MUST always create an implementation plan before writing or modifying code. Present the plan to the user for review and proceed only after explicit approval or direction.
+
 
 ## Architectural Invariants
 - **Layer 1 (Architecture):** SOPs dictate logic. If logic changes, update the SOP before updating the code (`architecture/`).
