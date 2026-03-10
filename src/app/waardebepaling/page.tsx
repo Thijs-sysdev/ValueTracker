@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [priceUpdateCandidates, setPriceUpdateCandidates] = useState<PriceUpdateCandidate[]>([]);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [pendingResults, setPendingResults] = useState<ValuationOutput[] | null>(null);
+  const [originalResults, setOriginalResults] = useState<ValuationOutput[] | null>(null);
   const [isFinalizingUpdates, setIsFinalizingUpdates] = useState(false);
 
 
@@ -97,7 +98,8 @@ export default function Dashboard() {
         if (candidates.length > 0) {
           // Stop: toon eerst de consent modal zodat de gebruiker kan kiezen
           setPriceUpdateCandidates(candidates);
-          setPendingResults(response.data);
+          setPendingResults(response.data_with_updates || response.data);
+          setOriginalResults(response.data);
           setShowConsentModal(true);
         } else {
           // Geen conflicten: toon de resultaten direct
@@ -123,6 +125,7 @@ export default function Dashboard() {
     } finally {
       setResults(pendingResults);
       setPendingResults(null);
+      setOriginalResults(null);
       setPriceUpdateCandidates([]);
       setShowConsentModal(false);
       setIsFinalizingUpdates(false);
@@ -131,7 +134,8 @@ export default function Dashboard() {
 
   /** Gebruiker weigert het overschrijven — toon resultaten zonder DB-update */
   const handleConsentDecline = () => {
-    setResults(pendingResults);
+    setResults(originalResults);
+    setOriginalResults(null);
     setPendingResults(null);
     setPriceUpdateCandidates([]);
     setShowConsentModal(false);

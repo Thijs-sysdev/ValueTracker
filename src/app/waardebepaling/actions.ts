@@ -10,6 +10,7 @@ import { getConfigMatrix } from '@/lib/config';
 export async function processValuationFile(formData: FormData): Promise<{
     success: boolean;
     data?: ValuationOutput[];
+    data_with_updates?: ValuationOutput[];
     price_update_candidates?: PriceUpdateCandidate[];
     error?: string;
 }> {
@@ -70,10 +71,9 @@ export async function processValuationFile(formData: FormData): Promise<{
         const configMatrix = await getConfigMatrix();
 
         const results: ValuationOutput[] = [];
+        const resultsWithUpdates: ValuationOutput[] = [];
         const priceUpdateCandidates: PriceUpdateCandidate[] = [];
-        // newLearnedPrices bevat items waarover de gebruiker GEEN toestemming hoeft te geven
-        // (volledig nieuwe artikelen die nog niet in de DB staan).
-        // Overschrijf-kandidaten gaan via priceUpdateCandidates met consent-flow.
+
         const newLearnedPrices: { manufacturer: string, article_number: string, year: number, price: number }[] = [];
 
         // Parse starting from row after header
@@ -103,8 +103,11 @@ export async function processValuationFile(formData: FormData): Promise<{
             };
 
             const targetYear = new Date(input.purchase_date).getFullYear();
-            let priceRef = lookupPrice(input.article_number, targetYear);
+            let priceRefBase = lookupPrice(input.article_number, targetYear);
+            let priceRefUpdated = priceRefBase ? { ...priceRefBase } : null;
+
             let usedDatabasePrice = false;
+            let hasConflict = false;
 
             // Override with provided price if available in the Excel
             if (mappings.gross_price !== -1) {
@@ -113,69 +116,82 @@ export async function processValuationFile(formData: FormData): Promise<{
                     const parsedPrice = parseFloat(providedPriceRaw.toString().replace(/\s/g, '').replace(',', '.'));
                     if (!isNaN(parsedPrice) && parsedPrice > 0) {
 
-                        if (!priceRef) {
-                            // Volledig nieuw artikel: zet het in de DB (user consent niet nodig)
+                        if (!priceRefBase || priceRefBase.is_fallback || priceRefBase.is_interpolated) {
+                            // Volledig nieuw of zwak referentiepunt: direct updaten (is_fallback/is_interpolated telt als 'niet echt aanwezig')
                             newLearnedPrices.push({
                                 manufacturer: input.manufacturer,
                                 article_number: input.article_number,
                                 year: targetYear,
                                 price: parsedPrice
                             });
-                        } else if (priceRef.is_fallback || priceRef.is_interpolated) {
-                            // DB had alleen een geschatte/geïnterpoleerde prijs → beschouwen als 'nieuw leren'
-                            newLearnedPrices.push({
+
+                            // In dit geval zijn base en updated hetzelfde (de nieuwe prijs)
+                            const updatedRef = {
                                 manufacturer: input.manufacturer,
                                 article_number: input.article_number,
-                                year: targetYear,
-                                price: parsedPrice
-                            });
-                        } else if (Math.abs(priceRef.gross_price - parsedPrice) > 0.001) {
-                            // Importprijs wijkt af van bestaande DB prijs → toestemming vragen
+                                gross_price: parsedPrice,
+                                year: targetYear
+                            };
+                            priceRefBase = updatedRef;
+                            priceRefUpdated = updatedRef;
+                        } else if (Math.abs(priceRefBase.gross_price - parsedPrice) > 0.001) {
+                            // Conflict! 
+                            hasConflict = true;
                             priceUpdateCandidates.push({
                                 article_number: input.article_number,
                                 manufacturer: input.manufacturer,
                                 description: input.description,
                                 year: targetYear,
-                                existing_price: priceRef.gross_price,
+                                existing_price: priceRefBase.gross_price,
                                 imported_price: parsedPrice,
                             });
+
+                            // priceRefBase blijft de DB prijs
+                            // priceRefUpdated krijgt de geïmporteerde prijs
+                            priceRefUpdated = {
+                                manufacturer: input.manufacturer,
+                                article_number: input.article_number,
+                                gross_price: parsedPrice,
+                                year: targetYear
+                            };
+                        } else {
+                            // Prijs is hetzelfde als in DB
+                            usedDatabasePrice = true;
                         }
-                        // Overschrijf altijd de referentie voor de berekening met de importprijs
-                        priceRef = {
-                            manufacturer: input.manufacturer,
-                            article_number: input.article_number,
-                            gross_price: parsedPrice,
-                            year: targetYear
-                        };
                     } else {
-                        // Geen geldige prijs in het importbestand → DB prijs gebruiken
                         usedDatabasePrice = true;
                     }
                 } else {
-                    // Kolom bestaat maar is leeg → DB prijs gebruiken
                     usedDatabasePrice = true;
                 }
             } else {
-                // Kolom bestaat niet in het bestand → DB prijs gebruiken
                 usedDatabasePrice = true;
             }
 
-            // Voeg database-melding toe als de prijs uit de DB komt
-            if (usedDatabasePrice && priceRef) {
-                priceRef.is_from_database = true;
-
-                // Voeg alleen een generieke melding toe als er nog geen specifieke melding (zoals interpolatie of fallback) is
-                if (!priceRef.price_note) {
-                    priceRef.price_note = `ℹ️ Prijs uit database (jaar ${priceRef.year}): €${priceRef.gross_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}.`;
+            // Voeg database-meldingen toe
+            if (usedDatabasePrice && priceRefBase) {
+                priceRefBase.is_from_database = true;
+                if (!priceRefBase.price_note) {
+                    priceRefBase.price_note = `ℹ️ Prijs uit database (jaar ${priceRefBase.year}): €${priceRefBase.gross_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}.`;
                 }
+                // In sync houden voor de "no internal conflict" cases
+                if (!hasConflict) priceRefUpdated = priceRefBase;
             }
 
-            const valuation = calculateValuation(input, priceRef, configMatrix);
-            // Zet de is_from_database vlag ook op het output-object zodat de UI het kan tonen
-            if (usedDatabasePrice && priceRef) {
-                valuation.is_from_database = true;
+            // Bereken base valuation (wat we tonen bij Decline)
+            const valuationBase = calculateValuation(input, priceRefBase, configMatrix);
+            if (usedDatabasePrice || (hasConflict && priceRefBase?.is_from_database)) {
+                valuationBase.is_from_database = true;
             }
-            results.push(valuation);
+            results.push(valuationBase);
+
+            // Bereken updated valuation (wat we tonen bij Accept)
+            if (hasConflict) {
+                const valuationUpdated = calculateValuation(input, priceRefUpdated, configMatrix);
+                resultsWithUpdates.push(valuationUpdated);
+            } else {
+                resultsWithUpdates.push(valuationBase);
+            }
         }
 
         // Auto-learn volledig nieuwe prijzen (niet in DB, geen overschrijving)
@@ -199,7 +215,7 @@ export async function processValuationFile(formData: FormData): Promise<{
         };
         saveHistory(historyItem);
 
-        return { success: true, data: results, price_update_candidates: priceUpdateCandidates };
+        return { success: true, data: results, data_with_updates: resultsWithUpdates, price_update_candidates: priceUpdateCandidates };
 
     } catch (error) {
         console.error("Valuation processing error", error);
