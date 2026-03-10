@@ -318,13 +318,14 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
             sheet[headerCellAddress] = { t: 's', v: WAARDEBEPALING_HEADER };
         }
 
-        // Build a lookup map from article_number -> sales_value from results
+        // Build a lookup map from article_number -> { sales_value, error } from results
         const articleColIdx = headers.findIndex(h => h.includes('artikel'));
-        const valuationMap = new Map<string, number>();
+        const valuationMap = new Map<string, { value: number, error?: string }>();
         for (const result of results) {
-            if (result.status === 'ACCEPTED') {
-                valuationMap.set(result.article_number.trim().toUpperCase(), result.sales_value);
-            }
+            valuationMap.set(result.article_number.trim().toUpperCase(), {
+                value: result.sales_value,
+                error: result.error
+            });
         }
 
         // Walk every data row and write value into column M
@@ -333,13 +334,17 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
             if (!row || !row[articleColIdx]) continue;
 
             const articleNumber = row[articleColIdx]?.toString().trim().toUpperCase();
-            const salesValue = valuationMap.get(articleNumber);
+            const record = valuationMap.get(articleNumber);
 
             const cellAddress = xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX });
-            if (salesValue !== undefined) {
-                sheet[cellAddress] = { t: 'n', v: salesValue };
+            if (record) {
+                if (record.error) {
+                    sheet[cellAddress] = { t: 's', v: `FOUT: ${record.error}` };
+                } else {
+                    sheet[cellAddress] = { t: 'n', v: record.value };
+                }
             } else {
-                // Clear cell if present (item is rejected or not found)
+                // Clear cell if present
                 delete sheet[cellAddress];
             }
         }
