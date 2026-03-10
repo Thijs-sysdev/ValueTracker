@@ -250,15 +250,15 @@ export default function Dashboard() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+            <div className="flex flex-col gap-3 p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 In beide gevallen worden de waardeberekeningen uitgevoerd.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="flex flex-row gap-3 w-full">
                 <button
                   onClick={handleConsentDecline}
                   disabled={isFinalizingUpdates}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                 >
                   <X size={16} />
                   Niet accepteren
@@ -266,7 +266,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleConsentAccept}
                   disabled={isFinalizingUpdates}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-amber-500 hover:bg-amber-400 dark:bg-amber-600 dark:hover:bg-amber-500 shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-amber-500 hover:bg-amber-400 dark:bg-amber-600 dark:hover:bg-amber-500 shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0"
                 >
                   {isFinalizingUpdates ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
                   {isFinalizingUpdates ? 'Opslaan...' : 'Accepteren & opslaan'}
