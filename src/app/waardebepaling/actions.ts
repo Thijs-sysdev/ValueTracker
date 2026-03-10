@@ -318,19 +318,38 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
             const sheet = workbook.sheet(targetSheetName);
             if (!sheet) throw new Error("Tabblad niet gevonden in de sheet builder.");
 
-            const WAARDEBEPALING_COL_IDX = 13; // Column M (1-based index in xlsx-populate)
-            const headerCell = sheet.cell(headerRowIdx + 1, WAARDEBEPALING_COL_IDX);
+            const BRUTOPROIJS_COL_IDX = 12; // Column L (1-based in xlsx-populate)
+            const WAARDEBEPALING_COL_IDX = 13; // Column M (1-based in xlsx-populate)
+            const EXTERN_COL_IDX = 14; // Column N (1-based in xlsx-populate)
 
-            if (!headerCell.value() || !headerCell.value()?.toString()?.toLowerCase().includes('waardebepaling')) {
-                headerCell.value('Waardebepaling');
-                headerCell.style("bold", true);
+            // Write/ensure column L header (Bruto Prijs)
+            const headerCellL = sheet.cell(headerRowIdx + 1, BRUTOPROIJS_COL_IDX);
+            if (!headerCellL.value() || !headerCellL.value()?.toString()?.toLowerCase().includes('bruto')) {
+                headerCellL.value('Bruto Prijs');
+                headerCellL.style('bold', true);
             }
 
-            const articleColIdx = headers.findIndex(h => h.includes('artikel')) + 1; // 1-based index
-            const valuationMap = new Map<string, { value: number, error?: string }>();
+            // Write/ensure column M header (Waardebepaling Consignatie)
+            const headerCellM = sheet.cell(headerRowIdx + 1, WAARDEBEPALING_COL_IDX);
+            if (!headerCellM.value() || !headerCellM.value()?.toString()?.toLowerCase().includes('waardebepaling')) {
+                headerCellM.value('Waardebepaling Consignatie per stuk');
+                headerCellM.style('bold', true);
+            }
+
+            // Write/ensure column N header (Waardebepaling Extern)
+            const headerCellN = sheet.cell(headerRowIdx + 1, EXTERN_COL_IDX);
+            if (!headerCellN.value() || !headerCellN.value()?.toString()?.toLowerCase().includes('extern')) {
+                headerCellN.value('Waardebepaling Extern per stuk');
+                headerCellN.style('bold', true);
+            }
+
+            const articleColIdx = headers.findIndex(h => h.includes('artikel')) + 1; // 1-based
+            const valuationMap = new Map<string, { consignatie: number, extern: number, brutoPrijs: number, error?: string }>();
             for (const result of results) {
                 valuationMap.set(result.article_number.trim().toUpperCase(), {
-                    value: result.sales_value,
+                    consignatie: result.purchase_value_consignment,
+                    extern: result.purchase_value_external,
+                    brutoPrijs: result.base_gross_price,
                     error: result.error
                 });
             }
@@ -347,12 +366,14 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
                     const record = valuationMap.get(articleNumber);
 
                     if (record) {
-                        const targetCell = sheet.cell(r, WAARDEBEPALING_COL_IDX);
                         if (record.error) {
-                            targetCell.value(`FOUT: ${record.error}`);
+                            sheet.cell(r, BRUTOPROIJS_COL_IDX).value('');
+                            sheet.cell(r, WAARDEBEPALING_COL_IDX).value(`FOUT: ${record.error}`);
+                            sheet.cell(r, EXTERN_COL_IDX).value('');
                         } else {
-                            targetCell.value(record.value);
-                            targetCell.style("numberFormat", "0.00"); // Price formatting
+                            sheet.cell(r, BRUTOPROIJS_COL_IDX).value(record.brutoPrijs).style('numberFormat', '€#,##0.00');
+                            sheet.cell(r, WAARDEBEPALING_COL_IDX).value(record.consignatie).style('numberFormat', '€#,##0.00');
+                            sheet.cell(r, EXTERN_COL_IDX).value(record.extern).style('numberFormat', '€#,##0.00');
                         }
                     }
                 }
@@ -368,19 +389,28 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
             const sheet = previewWorkbook.Sheets[targetSheetName];
             const data = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1 });
 
-            const WAARDEBEPALING_COL_IDX = 12; // Column M (0-based)
-            const WAARDEBEPALING_HEADER = 'Waardebepaling';
+            const BRUTOPROIJS_COL_IDX = 11; // Column L (0-based in xlsx)
+            const WAARDEBEPALING_COL_IDX = 12; // Column M (0-based in xlsx)
+            const EXTERN_COL_IDX = 13; // Column N (0-based in xlsx)
 
+            // Write headers
+            if (!headers[BRUTOPROIJS_COL_IDX] || !headers[BRUTOPROIJS_COL_IDX].includes('bruto')) {
+                sheet[xlsx.utils.encode_cell({ r: headerRowIdx, c: BRUTOPROIJS_COL_IDX })] = { t: 's', v: 'Bruto Prijs' };
+            }
             if (!headers[WAARDEBEPALING_COL_IDX] || !headers[WAARDEBEPALING_COL_IDX].includes('waardebepaling')) {
-                const headerCellAddress = xlsx.utils.encode_cell({ r: headerRowIdx, c: WAARDEBEPALING_COL_IDX });
-                sheet[headerCellAddress] = { t: 's', v: WAARDEBEPALING_HEADER };
+                sheet[xlsx.utils.encode_cell({ r: headerRowIdx, c: WAARDEBEPALING_COL_IDX })] = { t: 's', v: 'Waardebepaling Consignatie per stuk' };
+            }
+            if (!headers[EXTERN_COL_IDX] || !headers[EXTERN_COL_IDX].includes('extern')) {
+                sheet[xlsx.utils.encode_cell({ r: headerRowIdx, c: EXTERN_COL_IDX })] = { t: 's', v: 'Waardebepaling Extern per stuk' };
             }
 
             const articleColIdx = headers.findIndex(h => h.includes('artikel'));
-            const valuationMap = new Map<string, { value: number, error?: string }>();
+            const valuationMap = new Map<string, { consignatie: number, extern: number, brutoPrijs: number, error?: string }>();
             for (const result of results) {
                 valuationMap.set(result.article_number.trim().toUpperCase(), {
-                    value: result.sales_value,
+                    consignatie: result.purchase_value_consignment,
+                    extern: result.purchase_value_external,
+                    brutoPrijs: result.base_gross_price,
                     error: result.error
                 });
             }
@@ -392,22 +422,27 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
                 const articleNumber = row[articleColIdx]?.toString().trim().toUpperCase();
                 const record = valuationMap.get(articleNumber);
 
-                const cellAddress = xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX });
                 if (record) {
                     if (record.error) {
-                        sheet[cellAddress] = { t: 's', v: `FOUT: ${record.error}` };
+                        delete sheet[xlsx.utils.encode_cell({ r: i, c: BRUTOPROIJS_COL_IDX })];
+                        sheet[xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX })] = { t: 's', v: `FOUT: ${record.error}` };
+                        delete sheet[xlsx.utils.encode_cell({ r: i, c: EXTERN_COL_IDX })];
                     } else {
-                        sheet[cellAddress] = { t: 'n', v: record.value };
+                        sheet[xlsx.utils.encode_cell({ r: i, c: BRUTOPROIJS_COL_IDX })] = { t: 'n', v: record.brutoPrijs };
+                        sheet[xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX })] = { t: 'n', v: record.consignatie };
+                        sheet[xlsx.utils.encode_cell({ r: i, c: EXTERN_COL_IDX })] = { t: 'n', v: record.extern };
                     }
                 } else {
-                    delete sheet[cellAddress];
+                    delete sheet[xlsx.utils.encode_cell({ r: i, c: BRUTOPROIJS_COL_IDX })];
+                    delete sheet[xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX })];
+                    delete sheet[xlsx.utils.encode_cell({ r: i, c: EXTERN_COL_IDX })];
                 }
             }
 
             if (sheet['!ref']) {
                 const range = xlsx.utils.decode_range(sheet['!ref']);
-                if (range.e.c < WAARDEBEPALING_COL_IDX) {
-                    range.e.c = WAARDEBEPALING_COL_IDX;
+                if (range.e.c < EXTERN_COL_IDX) {
+                    range.e.c = EXTERN_COL_IDX;
                     sheet['!ref'] = xlsx.utils.encode_range(range);
                 }
             }
