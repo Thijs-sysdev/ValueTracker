@@ -7,6 +7,7 @@ import { lookupPrice, addLearnedPrices } from '@/lib/priceList';
 import { saveHistory } from '@/lib/history';
 import { getConfigMatrix } from '@/lib/config';
 
+
 export async function processValuationFile(formData: FormData): Promise<{
     success: boolean;
     data?: ValuationOutput[];
@@ -157,5 +158,114 @@ export async function processValuationFile(formData: FormData): Promise<{
     } catch (error) {
         console.error("Valuation processing error", error);
         return { success: false, error: error instanceof Error ? error.message : "Unknown error processing file" };
+    }
+}
+
+/**
+ * Takes the original uploaded Excel file and the valuation results,
+ * writes the sales_value (verkoopwaarde) per product into column M ("Waardebepaling"),
+ * and returns the enriched workbook as a base64-encoded .xlsx string.
+ */
+export async function exportEnrichedValuation(formData: FormData): Promise<{
+    success: boolean;
+    base64?: string;
+    fileName?: string;
+    error?: string;
+}> {
+    try {
+        const file = formData.get('file') as File;
+        const resultsJson = formData.get('results') as string;
+
+        if (!file || !resultsJson) {
+            return { success: false, error: "Missing file or valuation results." };
+        }
+
+        const results: ValuationOutput[] = JSON.parse(resultsJson);
+        const buffer = await file.arrayBuffer();
+        const workbook = xlsx.read(buffer, { type: 'buffer' });
+
+        // Find the correct sheet and header row (same logic as processValuationFile)
+        let targetSheetName: string | null = null;
+        let headerRowIdx = -1;
+
+        for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+
+            for (let i = 0; i < Math.min(30, data.length); i++) {
+                const row = data[i];
+                if (row && Array.isArray(row) && row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('artikel'))) {
+                    headerRowIdx = i;
+                    targetSheetName = sheetName;
+                    break;
+                }
+            }
+            if (targetSheetName) break;
+        }
+
+        if (!targetSheetName || headerRowIdx === -1) {
+            return { success: false, error: "Kon geen geldig tabblad vinden met een 'Artikelnummer' kolom." };
+        }
+
+        const sheet = workbook.Sheets[targetSheetName];
+        const data = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+        const headers: string[] = data[headerRowIdx].map((h: any) => (h?.toString() || "").toLowerCase());
+
+        // Column M is index 12 (0-based). Write the header if not already present.
+        const WAARDEBEPALING_COL_IDX = 12; // Column M
+        const WAARDEBEPALING_HEADER = 'Waardebepaling';
+
+        // If header row doesn't already have the column, add it
+        if (!headers[WAARDEBEPALING_COL_IDX] || !headers[WAARDEBEPALING_COL_IDX].includes('waardebepaling')) {
+            const headerCellAddress = xlsx.utils.encode_cell({ r: headerRowIdx, c: WAARDEBEPALING_COL_IDX });
+            sheet[headerCellAddress] = { t: 's', v: WAARDEBEPALING_HEADER };
+        }
+
+        // Build a lookup map from article_number -> sales_value from results
+        const articleColIdx = headers.findIndex(h => h.includes('artikel'));
+        const valuationMap = new Map<string, number>();
+        for (const result of results) {
+            if (result.status === 'ACCEPTED') {
+                valuationMap.set(result.article_number.trim().toUpperCase(), result.sales_value);
+            }
+        }
+
+        // Walk every data row and write value into column M
+        for (let i = headerRowIdx + 1; i < data.length; i++) {
+            const row = data[i];
+            if (!row || !row[articleColIdx]) continue;
+
+            const articleNumber = row[articleColIdx]?.toString().trim().toUpperCase();
+            const salesValue = valuationMap.get(articleNumber);
+
+            const cellAddress = xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX });
+            if (salesValue !== undefined) {
+                sheet[cellAddress] = { t: 'n', v: salesValue };
+            } else {
+                // Clear cell if present (item is rejected or not found)
+                delete sheet[cellAddress];
+            }
+        }
+
+        // Update sheet range to include column M
+        if (sheet['!ref']) {
+            const range = xlsx.utils.decode_range(sheet['!ref']);
+            if (range.e.c < WAARDEBEPALING_COL_IDX) {
+                range.e.c = WAARDEBEPALING_COL_IDX;
+                sheet['!ref'] = xlsx.utils.encode_range(range);
+            }
+        }
+
+        // Serialize workbook to base64
+        const outputBuffer = xlsx.write(workbook, { type: 'base64', bookType: 'xlsx' });
+
+        const baseName = file.name.replace(/\.(xlsx|xls)$/i, '');
+        const outputFileName = `${baseName}_inkoopvoorstel.xlsx`;
+
+        return { success: true, base64: outputBuffer, fileName: outputFileName };
+
+    } catch (error) {
+        console.error("Export enriched valuation error", error);
+        return { success: false, error: error instanceof Error ? error.message : "Unknown error during export" };
     }
 }

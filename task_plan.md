@@ -17,6 +17,9 @@
 - [ ] **Phase 3: Architect**
   - [ ] Write Technical SOPs (`architecture/`)
   - [ ] Implement deterministic Python scripts (`tools/`)
+- [x] Updating template logic
+    - [x] Replace old template with new V5 in project `public` directory
+    - [ ] Update template download link reference if necessary
 - [ ] **Phase 4: Stylize**
   - [ ] Refine Payload & Output formatting
   - [ ] UI/UX updates (if applicable)

@@ -3,14 +3,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UploadCloud, FileSpreadsheet, Loader2, Download, CheckCircle2, XCircle, AlertCircle, Info, Calculator, FileText, Settings as SettingsIcon } from 'lucide-react';
-import { processValuationFile } from './actions';
+import { processValuationFile, exportEnrichedValuation } from './actions';
+
 import { ValuationOutput } from '@/lib/types';
 
 export default function Dashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [results, setResults] = useState<ValuationOutput[] | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+
 
   // Restore results from sessionStorage on mount
   useEffect(() => {
@@ -66,6 +70,8 @@ export default function Dashboard() {
     setError(null);
     setIsLoading(true);
     setResults(null);
+    setOriginalFile(file);
+
 
     try {
       const formData = new FormData();
@@ -115,8 +121,44 @@ export default function Dashboard() {
     document.body.removeChild(link);
   };
 
+  const handleExportEnriched = async () => {
+    if (!results || !originalFile) return;
+    setIsExporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', originalFile);
+      formData.append('results', JSON.stringify(results));
+
+      const response = await exportEnrichedValuation(formData);
+
+      if (response.success && response.base64 && response.fileName) {
+        const binaryString = atob(response.base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', response.fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        setError(response.error || 'Er ging iets mis met het exporteren.');
+      }
+    } catch {
+      setError('Er ging iets mis met het verbinden met de server.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const totalCalculatedSales = results?.reduce((acc, curr) => acc + curr.sales_value, 0) || 0;
   const acceptedRatio = results ? (results.filter(r => r.status === 'ACCEPTED').length / results.length) * 100 : 0;
+
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
@@ -266,7 +308,16 @@ export default function Dashboard() {
                   <Download size={18} />
                   Export Extern
                 </button>
+                <button
+                  onClick={handleExportEnriched}
+                  disabled={isExporting || !originalFile}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3.5 rounded-xl hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                >
+                  {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />}
+                  {isExporting ? 'Bezig...' : 'Exporteer inkoopvoorstel'}
+                </button>
               </div>
+
             </div>
 
             {/* Detailed Results Table */}
