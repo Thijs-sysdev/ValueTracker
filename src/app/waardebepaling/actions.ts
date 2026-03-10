@@ -162,17 +162,12 @@ export async function processValuationFile(formData: FormData): Promise<{
 
             // Voeg database-melding toe als de prijs uit de DB komt
             if (usedDatabasePrice && priceRef) {
-                const dbNote = priceRef.is_interpolated
-                    ? `📊 Gemiddelde prijs berekend uit beschikbare jaren in de database.`
-                    : priceRef.is_fallback
-                        ? `⚠️ Geen prijs gevonden voor ${targetYear}. Historische prijs uit ${priceRef.year} gebruikt (€${priceRef.gross_price}).`
-                        : `ℹ️ Prijs uit database (jaar ${priceRef.year}): €${priceRef.gross_price}.`;
+                priceRef.is_from_database = true;
 
-                priceRef = {
-                    ...priceRef,
-                    is_from_database: true,
-                    price_note: priceRef.price_note ? `${priceRef.price_note}\n${dbNote}` : dbNote,
-                };
+                // Voeg alleen een generieke melding toe als er nog geen specifieke melding (zoals interpolatie of fallback) is
+                if (!priceRef.price_note) {
+                    priceRef.price_note = `ℹ️ Prijs uit database (jaar ${priceRef.year}): €${priceRef.gross_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}.`;
+                }
             }
 
             const valuation = calculateValuation(input, priceRef, configMatrix);
