@@ -254,7 +254,7 @@ export default function Dashboard() {
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 In beide gevallen worden de waardeberekeningen uitgevoerd.
               </p>
-              <div className="flex gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={handleConsentDecline}
                   disabled={isFinalizingUpdates}
