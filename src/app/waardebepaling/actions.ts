@@ -154,17 +154,19 @@ export async function processValuationFile(formData: FormData): Promise<{
                                 gross_price: parsedPrice,
                                 year: targetYear
                             };
-                        } else {
                             // Prijs is hetzelfde als in DB
-                            usedDatabasePrice = true;
+                            usedDatabasePrice = false; // User provided it, so it's not 'from database'
                         }
                     } else {
+                        // Ongeldige prijs (NaN of <= 0) -> we moeten de DB prijs gebruiken
                         usedDatabasePrice = true;
                     }
                 } else {
+                    // Cel is leeg -> DB prijs gebruiken
                     usedDatabasePrice = true;
                 }
             } else {
+                // Kolom ontbreekt -> DB prijs gebruiken
                 usedDatabasePrice = true;
             }
 
@@ -178,18 +180,22 @@ export async function processValuationFile(formData: FormData): Promise<{
                 if (!hasConflict) priceRefUpdated = priceRefBase;
             }
 
-            // Bereken base valuation (wat we tonen bij Decline)
+            // Bereken base valuation (wat we tonen bij Decline) 
+            // In het geval van een conflict is dit DE DB PRIJS, dus is_from_database moet true zijn.
             const valuationBase = calculateValuation(input, priceRefBase, configMatrix);
-            if (usedDatabasePrice || (hasConflict && priceRefBase?.is_from_database)) {
+            if (usedDatabasePrice || hasConflict) {
                 valuationBase.is_from_database = true;
             }
             results.push(valuationBase);
 
-            // Bereken updated valuation (wat we tonen bij Accept)
+            // Bereken updated valuation (wat we tonen bij Accept of als er geen conflict is)
             if (hasConflict) {
                 const valuationUpdated = calculateValuation(input, priceRefUpdated, configMatrix);
+                // Dit is de IMPORTED prijs, dus is_from_database is false
+                valuationUpdated.is_from_database = false;
                 resultsWithUpdates.push(valuationUpdated);
             } else {
+                // Als er geen conflict is, gebruiken we de base valuation (die is al correct)
                 resultsWithUpdates.push(valuationBase);
             }
         }

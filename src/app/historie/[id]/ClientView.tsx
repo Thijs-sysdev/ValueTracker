@@ -156,11 +156,11 @@ export default function HistoryDetailClient({ item }: { item: HistoryItem }) {
                                         <td className="px-6 py-5 text-right font-medium text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
                                             {row.purchase_value_external > 0 ? `€${row.purchase_value_external.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}` : '-'}
                                         </td>
-                                        <td className="px-6 py-5 font-medium text-xs max-w-[300px]" title={row.error || row.price_note}>
+                                        <td className="px-6 py-5 font-medium text-xs" title={row.error || row.price_note}>
                                             {row.error ? (
-                                                <span className="text-red-500/90 truncate block">{row.error}</span>
+                                                <span className="text-red-500/90 block break-words">{row.error}</span>
                                             ) : row.price_note ? (
-                                                <span className="text-amber-600 dark:text-amber-500 block leading-snug">{row.price_note}</span>
+                                                <span className="text-amber-600 dark:text-amber-500 block leading-snug break-words">{row.price_note}</span>
                                             ) : (
                                                 <span className="text-slate-300 dark:text-slate-700">-</span>
                                             )}
