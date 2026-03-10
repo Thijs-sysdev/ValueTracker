@@ -6,6 +6,7 @@ import { calculateValuation } from '@/lib/valuation';
 import { lookupPrice, addLearnedPrices } from '@/lib/priceList';
 import { saveHistory } from '@/lib/history';
 import { getConfigMatrix } from '@/lib/config';
+// @ts-expect-error: xlsx-populate does not have official types
 import XlsxPopulate from 'xlsx-populate';
 
 export async function processValuationFile(formData: FormData): Promise<{

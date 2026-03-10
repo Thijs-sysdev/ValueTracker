@@ -95,5 +95,5 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 - **Global Stage:** Final payload must reach the target destination.
 
 ## Pending Release Log
-- Update `gemini.md`: Nieuwe regel toegevoegd om verificatie over te slaan bij het starten van de app.
-- (Geen lopende wijzigingen - v1.2.6 is gereleased)
+- Fix in `page.tsx`: De knoppen in de consent modal voor prijsconflicten vallen niet meer horizontaal buiten beeld door toepassing van een responsive wrapping layout (`flex-wrap`).
+- Fix in `actions.ts`: De export functionaliteit voor het inkoopvoorstel is overgeschakeld naar `xlsx-populate` in plaats van `xlsx` zodat de styling, kleuren, randen, afbeeldingen en tekstvelden van het originele Excel bestand behouden blijven.

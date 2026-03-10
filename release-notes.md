@@ -21,6 +21,10 @@ De tabel in de waardebepaling-module heeft een flinke upgrade gekregen:
 - **Calculatie Fix**: Opgelost dat bij het weigeren van een prijsupdate (overschrijf-consent) de app niet correct terugviel op de oude databaseprijs.
 - **DB-Badge**: De "DB" badge verschijnt niet meer onterecht wanneer een geïmporteerde prijs exact overeenkomt met de database.
 
+### 🐛 UI & Export (Waardebepaling)
+- **Inkoopvoorstel Export**: De styling van het originele importbestand (kleuren, randen, afbeeldingen en tekstvakken) ging voorheen verloren bij het exporteren van het inkoopvoorstel. Dit wordt nu perfect behouden.
+- **Consent Modal**: De knoppen onderaan de "Prijzen overschrijven" popup vielen horizontaal buiten beeld op kleinere schermen. Dit is opgelost met een responsive lay-out.
+
 ---
 
 **Releasedatum:** 5 maart 2026
