@@ -1,6 +1,6 @@
 {
   "name": "valuetracker",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Parttracker BV — ValueTracker surplus inventory valuation tool",
   "author": "Parttracker BV",
   "private": true,
@@ -41,6 +41,7 @@
     "styled-jsx": "^5.1.7",
     "tailwind-merge": "^3.5.0",
     "xlsx": "^0.18.5",
+    "xlsx-populate": "^1.21.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

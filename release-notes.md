@@ -1,3 +1,16 @@
+# ValueTracker V1.2.7 - Export Formattering & Bugfixes
+**Releasedatum:** 10 maart 2026
+
+## Opgeloste problemen & Verbeteringen
+
+### 🐛 UI & Export (Waardebepaling)
+- **Inkoopvoorstel Export Styling**: De opmaak van het originele importbestand (o.a. kleuren, randen, afbeeldingen en tekstvakken) ging voorheen verloren bij het exporteren. Dit wordt nu perfect behouden dankzij het gebruik van de `xlsx-populate` methode.
+- **Inkoopvoorstel Kolommen**: De export stopt de resulterende waardes nu netjes in de volgende vooraf gedefinieerde kolommen: 'Bruto Prijs' (L), 'Waardebepaling Consignatie per stuk' (M), en voegt een nieuwe 'Waardebepaling Extern per stuk' kolom toe (N).
+- **Inkoopvoorstel Bestandsnaam**: Het geëxporteerde bestand hergebruikt nu vlekkeloos de originele bestandsnaam in het format `[originele naam] inkoopvoorstel.xlsx` (met een spatie, zonder underscore).
+- **Consent Modal Styling**: De bevestigingsknoppen onderaan de "Prijzen overschrijven" popup vielen soms horizontaal buiten beeld op kleinere schermen. Dit is opgelost door middel van dynamisch op-onder-elkaar afbreken (responsive `flex-wrap`).
+
+---
+
 # ValueTracker V1.2.6 - Dashboard & Export Verbeteringen
 **Releasedatum:** 10 maart 2026
 
@@ -18,7 +31,6 @@ De tabel in de waardebepaling-module heeft een flinke upgrade gekregen:
 
 ### 🐛 Prijslogica & UX
 - **Deduplicatie**: Opgelost dat er dubbele (tegenstrijdige) prijsnotities verschenen bij historische prijzen.
-- **Calculatie Fix**: Opgelost dat bij het weigeren van een prijsupdate (overschrijf-consent) de app niet correct terugviel op de oude databaseprijs.
 - **DB-Badge**: De "DB" badge verschijnt niet meer onterecht wanneer een geïmporteerde prijs exact overeenkomt met de database.
 
 ---
