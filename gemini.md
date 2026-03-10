@@ -97,3 +97,4 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 ## Pending Release Log
 - Fix in `page.tsx`: De knoppen in de consent modal voor prijsconflicten vallen niet meer horizontaal buiten beeld door toepassing van een responsive wrapping layout (`flex-wrap`).
 - Fix in `actions.ts`: De export functionaliteit voor het inkoopvoorstel is overgeschakeld naar `xlsx-populate` in plaats van `xlsx` zodat de styling, kleuren, randen, afbeeldingen en tekstvelden van het originele Excel bestand behouden blijven.
+- Fix in `actions.ts`: Export inkoopvoorstel is geüpdatet met de juiste kolommen: 'Bruto Prijs' (L), 'Waardebepaling Consignatie per stuk' (M), en 'Waardebepaling Extern per stuk' (N).

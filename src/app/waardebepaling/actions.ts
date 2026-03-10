@@ -451,7 +451,7 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
         }
 
         const baseName = file.name.replace(/\.(xlsx|xls)$/i, '');
-        const outputFileName = `${baseName}_inkoopvoorstel.xlsx`;
+        const outputFileName = `${baseName} inkoopvoorstel.xlsx`;
 
         return { success: true, base64: base64Str, fileName: outputFileName };
 
