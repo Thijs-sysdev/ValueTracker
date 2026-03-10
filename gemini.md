@@ -95,13 +95,4 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 - **Global Stage:** Final payload must reach the target destination.
 
 ## Pending Release Log
-- **Release Part 1 (feat):** Database price notifications and overwrite consent modal implemented.
-- **UI Update:** Removed gradient from ValueTracker heading.
-- **Brand Update:** New logo integrated, sidebar brightness filter removed.
-- **Export Enhancement:** 'Exporteer inkoopvoorstel' button added for Excel enrichment.
-- **UI Enhancement:** Valuation table widened to 98% width, 50-row limit removed, hidden items notice removed.
-- **Bugfix (UX):** Double price note messages (fallback + generic) deduplicated.
-- **Bugfix (Calculation):** Fixed fallback to DB prices when user declines price overwrite consent.
-- **Bugfix (UI):** Fixed misleading 'DB' badge when imported price matched database price.
-- **UI Enhancement:** Styled horizontal scrollbar for the wider valuation table.
-- **Feature/Localization:** Included rejected/error items in purchase proposal Excel export with Dutch error messages.
+- (Geen lopende wijzigingen - v1.2.6 is gereleased)
