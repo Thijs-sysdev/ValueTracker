@@ -29,10 +29,24 @@ export interface PriceReference {
     year: number;
     is_interpolated?: boolean;
     is_fallback?: boolean;
+    is_from_database?: boolean; // true wanneer de prijs uit de database komt (geen prijs in importbestand)
     price_note?: string;
     phased_out_year?: number;
     successor?: string;
     predecessor?: string;
+}
+
+/**
+ * Een artikel waarvoor de import-prijs kan overschrijven wat er al in de database staat.
+ * Wordt teruggegeven VOOR de definitieve opslag zodat de gebruiker toestemming kan geven.
+ */
+export interface PriceUpdateCandidate {
+    article_number: string;
+    manufacturer: string;
+    description: string;
+    year: number;
+    existing_price: number;   // huidige waarde in de database
+    imported_price: number;   // waarde uit het importbestand
 }
 
 export interface ValuationOutput {
@@ -49,6 +63,7 @@ export interface ValuationOutput {
     price_note?: string;
     error?: string;
     is_phased_out?: boolean;
+    is_from_database?: boolean; // true als de prijs uit de DB is gehaald (veld was leeg in import)
 }
 
 export interface ValuationConfig {
