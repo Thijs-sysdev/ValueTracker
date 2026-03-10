@@ -200,7 +200,7 @@ export default function Dashboard() {
 
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
+    <div className="max-w-[98%] mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
 
       {/* ── Consent Modal: Overschrijven van databaseprijzen ── */}
       {showConsentModal && (
@@ -447,7 +447,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {results?.slice(0, 50).map((row, idx) => (
+                    {results?.map((row, idx) => (
                       <tr key={idx} className="hover:bg-white/60 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-5 font-semibold font-mono text-slate-900 dark:text-slate-100">
                           <Link href={`/database?search=${encodeURIComponent(row.article_number)}`} className="text-brand-600 dark:text-brand-400 hover:text-brand-500 dark:hover:text-brand-300 hover:underline transition-colors" title="Bekijk prijshistorie">
@@ -504,11 +504,6 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
-                {results && results.length > 50 && (
-                  <div className="p-4 text-center text-sm font-medium text-slate-500 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
-                    Er worden {results.length - 50} extra items verborgen in deze weergave overzicht. (<span className="text-brand-600 dark:text-brand-400">Deze zitten wel volledig in de export .csv</span>)
-                  </div>
-                )}
               </div>
             </div>
 
