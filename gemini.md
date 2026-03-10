@@ -84,6 +84,7 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 - **Protocol:** Strict adherence to B.L.A.S.T. (Blueprint, Link, Architect, Stylize, Trigger) rules.
 - **Action:** Fix tool scripts upon failure and update `architecture/` SOPs before modifying code.
 - **Version Control:** You must automatically run `git add .`, `git commit -m "[Description of changes]"`, and `git push origin dev` after successfully writing new features or fixing bugs. Do not ask for redundant permission to push to the `dev` branch.
+- **Change Tracking:** Every time you push to the `dev` branch, you must maintain a private internal log of changes in a section at the bottom of `gemini.md` called "Pending Release Log". This allows for a comprehensive overview when bumping versions in the future.
 
 
 ## Architectural Invariants
@@ -92,3 +93,15 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 - **Layer 3 (Tools):** Deterministic, atomic, and testable scripts (`tools/`).
 - **Intermediate Storage:** Temporary files exist only in `.tmp/`.
 - **Global Stage:** Final payload must reach the target destination.
+
+## Pending Release Log
+- **Release Part 1 (feat):** Database price notifications and overwrite consent modal implemented.
+- **UI Update:** Removed gradient from ValueTracker heading.
+- **Brand Update:** New logo integrated, sidebar brightness filter removed.
+- **Export Enhancement:** 'Exporteer inkoopvoorstel' button added for Excel enrichment.
+- **UI Enhancement:** Valuation table widened to 98% width, 50-row limit removed, hidden items notice removed.
+- **Bugfix (UX):** Double price note messages (fallback + generic) deduplicated.
+- **Bugfix (Calculation):** Fixed fallback to DB prices when user declines price overwrite consent.
+- **Bugfix (UI):** Fixed misleading 'DB' badge when imported price matched database price.
+- **UI Enhancement:** Styled horizontal scrollbar for the wider valuation table.
+- **Feature/Localization:** Included rejected/error items in purchase proposal Excel export with Dutch error messages.

@@ -49,7 +49,7 @@ export function calculateValuation(
             purchase_value_consignment: 0,
             purchase_value_external: 0,
             status: 'AFWIJZEN',
-            error: "Condition rejected"
+            error: "Conditie niet geaccepteerd (USED/REV/REP)"
         };
     }
 
@@ -66,7 +66,7 @@ export function calculateValuation(
             purchase_value_consignment: 0,
             purchase_value_external: 0,
             status: 'AFWIJZEN',
-            error: "No price reference found"
+            error: "Geen prijsreferentie gevonden in database"
         };
     }
 

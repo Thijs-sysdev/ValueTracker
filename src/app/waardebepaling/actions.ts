@@ -1,7 +1,7 @@
 'use server';
 
 import * as xlsx from 'xlsx';
-import { ValuationInput, ValuationOutput, HistoryItem } from '@/lib/types';
+import { ValuationInput, ValuationOutput, HistoryItem, PriceUpdateCandidate } from '@/lib/types';
 import { calculateValuation } from '@/lib/valuation';
 import { lookupPrice, addLearnedPrices } from '@/lib/priceList';
 import { saveHistory } from '@/lib/history';
@@ -10,6 +10,8 @@ import { getConfigMatrix } from '@/lib/config';
 export async function processValuationFile(formData: FormData): Promise<{
     success: boolean;
     data?: ValuationOutput[];
+    data_with_updates?: ValuationOutput[];
+    price_update_candidates?: PriceUpdateCandidate[];
     error?: string;
 }> {
     try {
@@ -69,6 +71,9 @@ export async function processValuationFile(formData: FormData): Promise<{
         const configMatrix = await getConfigMatrix();
 
         const results: ValuationOutput[] = [];
+        const resultsWithUpdates: ValuationOutput[] = [];
+        const priceUpdateCandidates: PriceUpdateCandidate[] = [];
+
         const newLearnedPrices: { manufacturer: string, article_number: string, year: number, price: number }[] = [];
 
         // Parse starting from row after header
@@ -98,7 +103,11 @@ export async function processValuationFile(formData: FormData): Promise<{
             };
 
             const targetYear = new Date(input.purchase_date).getFullYear();
-            let priceRef = lookupPrice(input.article_number, targetYear);
+            let priceRefBase = lookupPrice(input.article_number, targetYear);
+            let priceRefUpdated = priceRefBase ? { ...priceRefBase } : null;
+
+            let usedDatabasePrice = false;
+            let hasConflict = false;
 
             // Override with provided price if available in the Excel
             if (mappings.gross_price !== -1) {
@@ -107,31 +116,91 @@ export async function processValuationFile(formData: FormData): Promise<{
                     const parsedPrice = parseFloat(providedPriceRaw.toString().replace(/\s/g, '').replace(',', '.'));
                     if (!isNaN(parsedPrice) && parsedPrice > 0) {
 
-                        // If price is unknown or guessed, we learn it!
-                        if (!priceRef || priceRef.is_fallback || priceRef.is_interpolated) {
+                        if (!priceRefBase || priceRefBase.is_fallback || priceRefBase.is_interpolated) {
+                            // Volledig nieuw of zwak referentiepunt: direct updaten (is_fallback/is_interpolated telt als 'niet echt aanwezig')
                             newLearnedPrices.push({
                                 manufacturer: input.manufacturer,
                                 article_number: input.article_number,
                                 year: targetYear,
                                 price: parsedPrice
                             });
-                        }
 
-                        priceRef = {
-                            manufacturer: input.manufacturer,
-                            article_number: input.article_number,
-                            gross_price: parsedPrice,
-                            year: targetYear
-                        };
+                            // In dit geval zijn base en updated hetzelfde (de nieuwe prijs)
+                            const updatedRef = {
+                                manufacturer: input.manufacturer,
+                                article_number: input.article_number,
+                                gross_price: parsedPrice,
+                                year: targetYear
+                            };
+                            priceRefBase = updatedRef;
+                            priceRefUpdated = updatedRef;
+                        } else if (Math.abs(priceRefBase.gross_price - parsedPrice) > 0.001) {
+                            // Conflict! 
+                            hasConflict = true;
+                            priceUpdateCandidates.push({
+                                article_number: input.article_number,
+                                manufacturer: input.manufacturer,
+                                description: input.description,
+                                year: targetYear,
+                                existing_price: priceRefBase.gross_price,
+                                imported_price: parsedPrice,
+                            });
+
+                            // priceRefBase blijft de DB prijs
+                            // priceRefUpdated krijgt de geïmporteerde prijs
+                            priceRefUpdated = {
+                                manufacturer: input.manufacturer,
+                                article_number: input.article_number,
+                                gross_price: parsedPrice,
+                                year: targetYear
+                            };
+                            // Prijs is hetzelfde als in DB
+                            usedDatabasePrice = false; // User provided it, so it's not 'from database'
+                        }
+                    } else {
+                        // Ongeldige prijs (NaN of <= 0) -> we moeten de DB prijs gebruiken
+                        usedDatabasePrice = true;
                     }
+                } else {
+                    // Cel is leeg -> DB prijs gebruiken
+                    usedDatabasePrice = true;
                 }
+            } else {
+                // Kolom ontbreekt -> DB prijs gebruiken
+                usedDatabasePrice = true;
             }
 
-            const valuation = calculateValuation(input, priceRef, configMatrix);
-            results.push(valuation);
+            // Voeg database-meldingen toe
+            if (usedDatabasePrice && priceRefBase) {
+                priceRefBase.is_from_database = true;
+                if (!priceRefBase.price_note) {
+                    priceRefBase.price_note = `ℹ️ Prijs uit database (jaar ${priceRefBase.year}): €${priceRefBase.gross_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}.`;
+                }
+                // In sync houden voor de "no internal conflict" cases
+                if (!hasConflict) priceRefUpdated = priceRefBase;
+            }
+
+            // Bereken base valuation (wat we tonen bij Decline) 
+            // In het geval van een conflict is dit DE DB PRIJS, dus is_from_database moet true zijn.
+            const valuationBase = calculateValuation(input, priceRefBase, configMatrix);
+            if (usedDatabasePrice || hasConflict) {
+                valuationBase.is_from_database = true;
+            }
+            results.push(valuationBase);
+
+            // Bereken updated valuation (wat we tonen bij Accept of als er geen conflict is)
+            if (hasConflict) {
+                const valuationUpdated = calculateValuation(input, priceRefUpdated, configMatrix);
+                // Dit is de IMPORTED prijs, dus is_from_database is false
+                valuationUpdated.is_from_database = false;
+                resultsWithUpdates.push(valuationUpdated);
+            } else {
+                // Als er geen conflict is, gebruiken we de base valuation (die is al correct)
+                resultsWithUpdates.push(valuationBase);
+            }
         }
 
-        // Auto-learn new prices
+        // Auto-learn volledig nieuwe prijzen (niet in DB, geen overschrijving)
         if (newLearnedPrices.length > 0) {
             addLearnedPrices(newLearnedPrices);
         }
@@ -152,10 +221,153 @@ export async function processValuationFile(formData: FormData): Promise<{
         };
         saveHistory(historyItem);
 
-        return { success: true, data: results };
+        return { success: true, data: results, data_with_updates: resultsWithUpdates, price_update_candidates: priceUpdateCandidates };
 
     } catch (error) {
         console.error("Valuation processing error", error);
         return { success: false, error: error instanceof Error ? error.message : "Unknown error processing file" };
+    }
+}
+
+/**
+ * Slaat goedgekeurde prijsupdates op in de database.
+ * Wordt aangeroepen NADAT de gebruiker toestemming heeft gegeven via de modal.
+ * Kan ook als lege lijst worden meegegeven (dan doet het niets), zodat de flow
+ * altijd door kan zonder opnieuw te beginnen.
+ */
+export async function finalizePriceUpdates(
+    candidates: { article_number: string; manufacturer: string; description: string; year: number; existing_price: number; imported_price: number }[]
+): Promise<{ success: boolean; updated: number; error?: string }> {
+    try {
+        if (!candidates || candidates.length === 0) {
+            return { success: true, updated: 0 };
+        }
+
+        const updates = candidates.map(c => ({
+            manufacturer: c.manufacturer,
+            article_number: c.article_number,
+            year: c.year,
+            price: c.imported_price,
+        }));
+
+        addLearnedPrices(updates);
+        return { success: true, updated: updates.length };
+    } catch (error) {
+        console.error('finalizePriceUpdates error', error);
+        return { success: false, updated: 0, error: error instanceof Error ? error.message : 'Onbekende fout' };
+    }
+}
+
+/**
+ * Takes the original uploaded Excel file and the valuation results,
+ * writes the sales_value (verkoopwaarde) per product into column M ("Waardebepaling"),
+ * and returns the enriched workbook as a base64-encoded .xlsx string.
+ */
+export async function exportEnrichedValuation(formData: FormData): Promise<{
+    success: boolean;
+    base64?: string;
+    fileName?: string;
+    error?: string;
+}> {
+    try {
+        const file = formData.get('file') as File;
+        const resultsJson = formData.get('results') as string;
+
+        if (!file || !resultsJson) {
+            return { success: false, error: "Missing file or valuation results." };
+        }
+
+        const results: ValuationOutput[] = JSON.parse(resultsJson);
+        const buffer = await file.arrayBuffer();
+        const workbook = xlsx.read(buffer, { type: 'buffer' });
+
+        // Find the correct sheet and header row (same logic as processValuationFile)
+        let targetSheetName: string | null = null;
+        let headerRowIdx = -1;
+
+        for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+
+            for (let i = 0; i < Math.min(30, data.length); i++) {
+                const row = data[i];
+                if (row && Array.isArray(row) && row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('artikel'))) {
+                    headerRowIdx = i;
+                    targetSheetName = sheetName;
+                    break;
+                }
+            }
+            if (targetSheetName) break;
+        }
+
+        if (!targetSheetName || headerRowIdx === -1) {
+            return { success: false, error: "Kon geen geldig tabblad vinden met een 'Artikelnummer' kolom." };
+        }
+
+        const sheet = workbook.Sheets[targetSheetName];
+        const data = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+        const headers: string[] = data[headerRowIdx].map((h: any) => (h?.toString() || "").toLowerCase());
+
+        // Column M is index 12 (0-based). Write the header if not already present.
+        const WAARDEBEPALING_COL_IDX = 12; // Column M
+        const WAARDEBEPALING_HEADER = 'Waardebepaling';
+
+        // If header row doesn't already have the column, add it
+        if (!headers[WAARDEBEPALING_COL_IDX] || !headers[WAARDEBEPALING_COL_IDX].includes('waardebepaling')) {
+            const headerCellAddress = xlsx.utils.encode_cell({ r: headerRowIdx, c: WAARDEBEPALING_COL_IDX });
+            sheet[headerCellAddress] = { t: 's', v: WAARDEBEPALING_HEADER };
+        }
+
+        // Build a lookup map from article_number -> { sales_value, error } from results
+        const articleColIdx = headers.findIndex(h => h.includes('artikel'));
+        const valuationMap = new Map<string, { value: number, error?: string }>();
+        for (const result of results) {
+            valuationMap.set(result.article_number.trim().toUpperCase(), {
+                value: result.sales_value,
+                error: result.error
+            });
+        }
+
+        // Walk every data row and write value into column M
+        for (let i = headerRowIdx + 1; i < data.length; i++) {
+            const row = data[i];
+            if (!row || !row[articleColIdx]) continue;
+
+            const articleNumber = row[articleColIdx]?.toString().trim().toUpperCase();
+            const record = valuationMap.get(articleNumber);
+
+            const cellAddress = xlsx.utils.encode_cell({ r: i, c: WAARDEBEPALING_COL_IDX });
+            if (record) {
+                if (record.error) {
+                    sheet[cellAddress] = { t: 's', v: `FOUT: ${record.error}` };
+                } else {
+                    sheet[cellAddress] = { t: 'n', v: record.value };
+                }
+            } else {
+                // Clear cell if present
+                delete sheet[cellAddress];
+            }
+        }
+
+        // Update sheet range to include column M
+        if (sheet['!ref']) {
+            const range = xlsx.utils.decode_range(sheet['!ref']);
+            if (range.e.c < WAARDEBEPALING_COL_IDX) {
+                range.e.c = WAARDEBEPALING_COL_IDX;
+                sheet['!ref'] = xlsx.utils.encode_range(range);
+            }
+        }
+
+        // Serialize workbook to base64
+        const outputBuffer = xlsx.write(workbook, { type: 'base64', bookType: 'xlsx' });
+
+        const baseName = file.name.replace(/\.(xlsx|xls)$/i, '');
+        const outputFileName = `${baseName}_inkoopvoorstel.xlsx`;
+
+        return { success: true, base64: outputBuffer, fileName: outputFileName };
+
+    } catch (error) {
+        console.error("Export enriched valuation error", error);
+        return { success: false, error: error instanceof Error ? error.message : "Unknown error during export" };
     }
 }

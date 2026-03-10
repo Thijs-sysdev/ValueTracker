@@ -2,15 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UploadCloud, FileSpreadsheet, Loader2, Download, CheckCircle2, XCircle, AlertCircle, Info, Calculator, FileText, Settings as SettingsIcon } from 'lucide-react';
-import { processValuationFile } from './actions';
-import { ValuationOutput } from '@/lib/types';
+import { UploadCloud, FileSpreadsheet, Loader2, Download, CheckCircle2, XCircle, AlertCircle, Database, X } from 'lucide-react';
+import { processValuationFile, exportEnrichedValuation, finalizePriceUpdates } from './actions';
+
+import { ValuationOutput, PriceUpdateCandidate } from '@/lib/types';
 
 export default function Dashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [results, setResults] = useState<ValuationOutput[] | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Consent modal state
+  const [priceUpdateCandidates, setPriceUpdateCandidates] = useState<PriceUpdateCandidate[]>([]);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [pendingResults, setPendingResults] = useState<ValuationOutput[] | null>(null);
+  const [originalResults, setOriginalResults] = useState<ValuationOutput[] | null>(null);
+  const [isFinalizingUpdates, setIsFinalizingUpdates] = useState(false);
+
 
   // Restore results from sessionStorage on mount
   useEffect(() => {
@@ -66,6 +77,8 @@ export default function Dashboard() {
     setError(null);
     setIsLoading(true);
     setResults(null);
+    setOriginalFile(file);
+
 
     try {
       const formData = new FormData();
@@ -81,7 +94,17 @@ export default function Dashboard() {
       const response = await processValuationFile(formData);
 
       if (response.success && response.data) {
-        setResults(response.data);
+        const candidates = response.price_update_candidates ?? [];
+        if (candidates.length > 0) {
+          // Stop: toon eerst de consent modal zodat de gebruiker kan kiezen
+          setPriceUpdateCandidates(candidates);
+          setPendingResults(response.data_with_updates || response.data);
+          setOriginalResults(response.data);
+          setShowConsentModal(true);
+        } else {
+          // Geen conflicten: toon de resultaten direct
+          setResults(response.data);
+        }
       } else {
         setError(response.error || "Er is een onbekende fout opgetreden tijdens de analyse.");
       }
@@ -90,6 +113,32 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /** Gebruiker accepteert het overschrijven van de database */
+  const handleConsentAccept = async () => {
+    setIsFinalizingUpdates(true);
+    try {
+      await finalizePriceUpdates(priceUpdateCandidates);
+    } catch {
+      // Fout bij opslaan, maar we gaan toch door naar de resultaten
+    } finally {
+      setResults(pendingResults);
+      setPendingResults(null);
+      setOriginalResults(null);
+      setPriceUpdateCandidates([]);
+      setShowConsentModal(false);
+      setIsFinalizingUpdates(false);
+    }
+  };
+
+  /** Gebruiker weigert het overschrijven — toon resultaten zonder DB-update */
+  const handleConsentDecline = () => {
+    setResults(originalResults);
+    setOriginalResults(null);
+    setPendingResults(null);
+    setPriceUpdateCandidates([]);
+    setShowConsentModal(false);
   };
 
   const generateCSV = (type: 'consignment' | 'external') => {
@@ -115,11 +164,118 @@ export default function Dashboard() {
     document.body.removeChild(link);
   };
 
+  const handleExportEnriched = async () => {
+    if (!results || !originalFile) return;
+    setIsExporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', originalFile);
+      formData.append('results', JSON.stringify(results));
+
+      const response = await exportEnrichedValuation(formData);
+
+      if (response.success && response.base64 && response.fileName) {
+        const binaryString = atob(response.base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', response.fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        setError(response.error || 'Er ging iets mis met het exporteren.');
+      }
+    } catch {
+      setError('Er ging iets mis met het verbinden met de server.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const totalCalculatedSales = results?.reduce((acc, curr) => acc + curr.sales_value, 0) || 0;
   const acceptedRatio = results ? (results.filter(r => r.status === 'ACCEPTED').length / results.length) * 100 : 0;
 
+
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
+    <div className="max-w-[98%] mx-auto space-y-10 animate-in fade-in duration-700 pb-12 pt-6">
+
+      {/* ── Consent Modal: Overschrijven van databaseprijzen ── */}
+      {showConsentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 p-6 border-b border-slate-200 dark:border-slate-800 bg-amber-50 dark:bg-amber-950/30">
+              <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50">
+                <Database size={22} className="text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Prijzen overschrijven in database?</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Voor de volgende {priceUpdateCandidates.length} artikel{priceUpdateCandidates.length !== 1 ? 'en' : ''} staat er een afwijkende prijs in het importbestand.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Body — tabel met kandidaten */}
+            <div className="overflow-y-auto max-h-72">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th className="px-5 py-3 font-bold">Artikelnummer</th>
+                    <th className="px-5 py-3 font-bold">Omschrijving</th>
+                    <th className="px-5 py-3 font-bold text-right">Huidige DB-prijs</th>
+                    <th className="px-5 py-3 font-bold text-right">Nieuwe prijs</th>
+                    <th className="px-5 py-3 font-bold text-right">Jaar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {priceUpdateCandidates.map((c, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="px-5 py-3 font-mono font-semibold text-slate-900 dark:text-slate-100">{c.article_number}</td>
+                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400 max-w-[180px] truncate" title={c.description}>{c.description || '—'}</td>
+                      <td className="px-5 py-3 text-right text-slate-500">€{c.existing_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-5 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">€{c.imported_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-5 py-3 text-right text-slate-500">{c.year}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                In beide gevallen worden de waardeberekeningen uitgevoerd.
+              </p>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button
+                  onClick={handleConsentDecline}
+                  disabled={isFinalizingUpdates}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                >
+                  <X size={16} />
+                  Niet accepteren
+                </button>
+                <button
+                  onClick={handleConsentAccept}
+                  disabled={isFinalizingUpdates}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-amber-500 hover:bg-amber-400 dark:bg-amber-600 dark:hover:bg-amber-500 shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0"
+                >
+                  {isFinalizingUpdates ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                  {isFinalizingUpdates ? 'Opslaan...' : 'Accepteren & opslaan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -266,12 +422,21 @@ export default function Dashboard() {
                   <Download size={18} />
                   Export Extern
                 </button>
+                <button
+                  onClick={handleExportEnriched}
+                  disabled={isExporting || !originalFile}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3.5 rounded-xl hover:from-emerald-500 hover:to-emerald-400 shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                >
+                  {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />}
+                  {isExporting ? 'Bezig...' : 'Exporteer inkoopvoorstel'}
+                </button>
               </div>
+
             </div>
 
             {/* Detailed Results Table */}
             <div className="glass-panel rounded-[2rem] overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-800">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-100/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
                     <tr>
@@ -286,7 +451,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {results?.slice(0, 50).map((row, idx) => (
+                    {results?.map((row, idx) => (
                       <tr key={idx} className="hover:bg-white/60 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-5 font-semibold font-mono text-slate-900 dark:text-slate-100">
                           <Link href={`/database?search=${encodeURIComponent(row.article_number)}`} className="text-brand-600 dark:text-brand-400 hover:text-brand-500 dark:hover:text-brand-300 hover:underline transition-colors" title="Bekijk prijshistorie">
@@ -305,7 +470,14 @@ export default function Dashboard() {
                           )}
                         </td>
                         <td className="px-6 py-5 text-right font-medium text-slate-500">
-                          {row.base_gross_price > 0 ? `€${row.base_gross_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}` : '-'}
+                          <div className="flex items-center justify-end gap-2">
+                            {row.is_from_database && (
+                              <span title="Prijs uit database" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 ring-1 ring-blue-400/20">
+                                <Database size={9} /> DB
+                              </span>
+                            )}
+                            {row.base_gross_price > 0 ? `€${row.base_gross_price.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}` : '-'}
+                          </div>
                         </td>
                         <td className="px-6 py-5 text-right font-medium text-slate-500">
                           {row.base_price_year > 0 ? row.base_price_year : '-'}
@@ -319,11 +491,15 @@ export default function Dashboard() {
                         <td className="px-6 py-5 text-right font-medium text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
                           {row.purchase_value_external > 0 ? `€${row.purchase_value_external.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}` : '-'}
                         </td>
-                        <td className="px-6 py-5 font-medium text-xs max-w-[300px]" title={row.error || row.price_note}>
+                        <td className="px-6 py-5 font-medium text-xs" title={row.error || row.price_note}>
                           {row.error ? (
-                            <span className="text-red-500/90 truncate block">{row.error}</span>
+                            <span className="text-red-500/90 block break-words">{row.error}</span>
                           ) : row.price_note ? (
-                            <span className="text-amber-600 dark:text-amber-500 block leading-snug">{row.price_note}</span>
+                            <span className="block space-y-0.5">
+                              {row.price_note.split('\n').map((line, i) => (
+                                <span key={i} className="block leading-snug text-amber-600 dark:text-amber-500">{line}</span>
+                              ))}
+                            </span>
                           ) : (
                             <span className="text-slate-300 dark:text-slate-700">-</span>
                           )}
@@ -332,11 +508,6 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
-                {results && results.length > 50 && (
-                  <div className="p-4 text-center text-sm font-medium text-slate-500 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
-                    Er worden {results.length - 50} extra items verborgen in deze weergave overzicht. (<span className="text-brand-600 dark:text-brand-400">Deze zitten wel volledig in de export .csv</span>)
-                  </div>
-                )}
               </div>
             </div>
 

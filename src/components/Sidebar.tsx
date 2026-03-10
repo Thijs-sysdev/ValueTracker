@@ -38,7 +38,7 @@ export default function Sidebar() {
                             alt="Logo"
                             width={160}
                             height={50}
-                            className="w-auto h-10 object-contain filter invert opacity-90 hover:opacity-100 transition-opacity dark:invert"
+                            className="w-auto h-10 object-contain opacity-90 hover:opacity-100 transition-opacity"
                             priority
                         />
                     </Link>

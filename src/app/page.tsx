@@ -63,7 +63,7 @@ export default function Dashboard() {
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
                     <div className="max-w-xl">
                         <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-                            Welkom bij <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-blue-500">ValueTracker</span>
+                            Welkom bij ValueTracker
                         </h1>
                         <p className="text-lg text-slate-400 leading-relaxed">
                             Het centrale portaal voor de waardebepaling, prijsanalyse en beheer van industriële componenten.

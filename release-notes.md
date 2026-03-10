@@ -1,4 +1,28 @@
-# ValueTracker V1.2.5 - Bugfix: Installer & AI Search
+# ValueTracker V1.2.6 - Dashboard & Export Verbeteringen
+**Releasedatum:** 10 maart 2026
+
+## Nieuwe Functies & Verbeteringen
+
+### 📤 Inkoopvoorstel Verrijking (Einde aan exporteren-stop)
+Het is nu mogelijk om het inkoopvoorstel (Excel-verrijking) te exporteren, zelfs als er artikelen zijn geweigerd (bijv. USED/REV/REP). 
+- **Foutopname**: Geweigerde artikelen worden nu gewoon meegenomen in de Excel.
+- **Nederlandse Foutmeldingen**: De reden van afwijzing wordt in helder Nederlands in de "Waardebepaling" kolom gezet (bijv. "Conditie niet geaccepteerd" i.p.v. "Condition rejected").
+
+### 📊 Verbeterde Waardebepaling Tabel
+De tabel in de waardebepaling-module heeft een flinke upgrade gekregen:
+- **Maximale Ruimte**: De tabel gebruikt nu 98% van de schermbreedte.
+- **Geen Limieten**: De limiet van 50 rijen is verwijderd. Alle ingeladen artikelen zijn direct zichtbaar.
+- **Custom Scrolling**: De horizontale scrollbalk is nu gestyled volgens onze moderne "deep dark" aesthetic.
+
+## Opgeloste problemen
+
+### 🐛 Prijslogica & UX
+- **Deduplicatie**: Opgelost dat er dubbele (tegenstrijdige) prijsnotities verschenen bij historische prijzen.
+- **Calculatie Fix**: Opgelost dat bij het weigeren van een prijsupdate (overschrijf-consent) de app niet correct terugviel op de oude databaseprijs.
+- **DB-Badge**: De "DB" badge verschijnt niet meer onterecht wanneer een geïmporteerde prijs exact overeenkomt met de database.
+
+---
+
 **Releasedatum:** 5 maart 2026
 
 ## Opgeloste problemen
