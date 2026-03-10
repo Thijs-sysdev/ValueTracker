@@ -6,8 +6,7 @@ import { calculateValuation } from '@/lib/valuation';
 import { lookupPrice, addLearnedPrices } from '@/lib/priceList';
 import { saveHistory } from '@/lib/history';
 import { getConfigMatrix } from '@/lib/config';
-// @ts-expect-error: xlsx-populate does not have official types
-import XlsxPopulate from 'xlsx-populate';
+
 
 export async function processValuationFile(formData: FormData): Promise<{
     success: boolean;
@@ -311,6 +310,9 @@ export async function exportEnrichedValuation(formData: FormData): Promise<{
         let base64Str: string = "";
 
         try {
+            // Dynamic import keeps xlsx-populate out of module init — prevents crashing other actions
+            // @ts-expect-error: xlsx-populate does not have official types
+            const XlsxPopulate = (await import('xlsx-populate')).default;
             // Use xlsx-populate to enrich preserving all visual stuff, images, shapes and styles
             const workbook = await XlsxPopulate.fromDataAsync(buffer);
             const sheet = workbook.sheet(targetSheetName);
