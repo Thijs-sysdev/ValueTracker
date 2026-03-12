@@ -95,4 +95,4 @@ If the Condition string starts with `USED`, `REV`, or `REP`, the item is automat
 - **Global Stage:** Final payload must reach the target destination.
 
 ## Pending Release Log
-- (Geen lopende wijzigingen - v1.2.7 is gereleased)
+- Bugfix: Implemented case-insensitive configuration lookups for Manufacturer and Category, ensuring reliable valuation calculations regardless of input casing variations.

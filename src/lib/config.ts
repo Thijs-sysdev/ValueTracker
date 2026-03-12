@@ -7,7 +7,7 @@ const getConfigFilePath = () => getDataFilePath('config.json');
 
 // Default initial config matrix based on the 'Configuratie' sheet in 'Waardebepaling berekeningen.xlsx'
 const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
-    "SiemensPLC Materialen": {
+    "siemensplc materialen": {
         key: "SiemensPLC Materialen",
         manufacturer: "Siemens",
         category: "PLC Materialen",
@@ -16,7 +16,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "SiemensPower Supplies": {
+    "siemenspower supplies": {
         key: "SiemensPower Supplies",
         manufacturer: "Siemens",
         category: "Power Supplies",
@@ -25,7 +25,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "SiemensHMI en Displays": {
+    "siemenshmi en displays": {
         key: "SiemensHMI en Displays",
         manufacturer: "Siemens",
         category: "HMI en Displays",
@@ -34,7 +34,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "SiemensFrequentieregelaars": {
+    "siemensfrequentieregelaars": {
         key: "SiemensFrequentieregelaars",
         manufacturer: "Siemens",
         category: "Frequentieregelaars",
@@ -43,7 +43,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "SiemensSchakelaarsenZekeringen Automaten MBS 5SJ": {
+    "siemenschakelaarsenzekeringen automaten mbs 5sj": {
         key: "SiemensSchakelaarsenZekeringen Automaten MBS 5SJ",
         manufacturer: "Siemens",
         category: "SchakelaarsenZekeringen Automaten MBS 5SJ",
@@ -52,7 +52,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "SiemensServomotoren": {
+    "siemensservomotoren": {
         key: "SiemensServomotoren",
         manufacturer: "Siemens",
         category: "Servomotoren",
@@ -61,7 +61,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "LenzeFrequentieregelaars": {
+    "lenzefrequentieregelaars": {
         key: "LenzeFrequentieregelaars",
         manufacturer: "Lenze",
         category: "Frequentieregelaars",
@@ -70,7 +70,7 @@ const INITIAL_CONFIGURATION_MATRIX: Record<string, ValuationConfig> = {
         conditionPenaltyNOB: 0.2,
         conditionPenaltyNIBS: 0
     },
-    "Allen BradleyPLC Materialen": {
+    "allen bradleyplc materialen": {
         key: "Allen BradleyPLC Materialen",
         manufacturer: "Allen Bradley",
         category: "PLC Materialen",
@@ -95,7 +95,15 @@ export async function getConfigMatrix(): Promise<Record<string, ValuationConfig>
         }
 
         const data = fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
-        return JSON.parse(data);
+        const rawMatrix: Record<string, ValuationConfig> = JSON.parse(data);
+        
+        // Normalize keys on load to ensure compatibility with case-insensitive matching
+        const normalizedMatrix: Record<string, ValuationConfig> = {};
+        for (const [key, value] of Object.entries(rawMatrix)) {
+            normalizedMatrix[key.toLowerCase()] = value;
+        }
+        
+        return normalizedMatrix;
     } catch (error) {
         console.error("Error reading configuration matrix:", error);
         return INITIAL_CONFIGURATION_MATRIX;

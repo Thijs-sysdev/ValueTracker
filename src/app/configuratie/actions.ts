@@ -16,7 +16,7 @@ export async function addOrUpdateConfig(formData: FormData) {
             return { success: false, error: "Merk en Categorie zijn verplicht." };
         }
 
-        const lookupKey = `${manufacturer}${category}`;
+        const lookupKey = `${manufacturer}${category}`.toLowerCase();
 
         const newConfig: ValuationConfig = {
             key: lookupKey,
@@ -43,9 +43,10 @@ export async function addOrUpdateConfig(formData: FormData) {
 
 export async function deleteConfig(key: string): Promise<void> {
     try {
+        const normalizedKey = key.toLowerCase();
         const configMatrix = await getConfigMatrix();
-        if (configMatrix[key]) {
-            delete configMatrix[key];
+        if (configMatrix[normalizedKey]) {
+            delete configMatrix[normalizedKey];
             await saveConfigMatrix(configMatrix);
             revalidatePath('/instellingen');
         }

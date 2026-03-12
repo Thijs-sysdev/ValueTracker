@@ -72,7 +72,7 @@ export function calculateValuation(
 
     // Lookup Configuration
     // Excel formula used XLOOKUP with "MerkCategorie" (Manufacturer + Category without spaces)
-    const lookupKey = `${input.manufacturer}${input.category}`;
+    const lookupKey = `${input.manufacturer?.trim() || ""}${input.category?.trim() || ""}`.toLowerCase();
     const config = configMatrix[lookupKey];
 
     if (!config) {
